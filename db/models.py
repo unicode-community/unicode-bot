@@ -1,0 +1,32 @@
+from typing import Optional
+
+from sqlalchemy import BigInteger, Integer, Text, DateTime
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from datetime import datetime
+
+
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    subscription_type: Mapped[str] = mapped_column(Text, nullable=True)
+    subscription_start: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    subscription_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+
+class Mentor(Base):
+    __tablename__ = "mentors"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    tg_username: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    descr: Mapped[str] = mapped_column(Text, nullable=False)
+    price: Mapped[str] = mapped_column(Text, nullable=False)
+    

@@ -1,0 +1,35 @@
+version: '3.7'
+services:
+  db:
+    container_name: "postgres"
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_NAME}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: on-failure
+    ports:
+      - "5432:5432"
+  pgadmin:
+    container_name: "pgadmin"
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    restart: on-failure
+  bot:
+    container_name: "bot"
+    build: .
+    command: python3 bot.py
+    env_file:
+      - ./.env
+    restart: always
+    depends_on:
+      - db
+volumes:
+  pgdata:
