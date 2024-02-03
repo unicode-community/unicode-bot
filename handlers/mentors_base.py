@@ -3,12 +3,14 @@ from datetime import datetime
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
+from dotenv import find_dotenv, load_dotenv
 
 from db.database import Database
 from keyboards.builders import reply_builder
 from messages import error_no_subscr_for_mentors_base, link_to_mentors_base, mentors_instructions, mentors_welcome
 from utils.states import Mentor
 
+load_dotenv(find_dotenv())
 router = Router()
 
 @router.message(F.text.lower() == "база менторов")
