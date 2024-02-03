@@ -14,7 +14,7 @@ async def start_cmd(message: types.Message, state: FSMContext) -> None:
     await message.answer(
         text=main_welcome,
         reply_markup=reply_builder(
-            text=["Оформить подписку", "База вопросов", "Бот для IT-знакомств", "База менторов", "Чаты сообщества"],
-            sizes=[1, 2, 2]
+            text=["Оформить подписку", "Отменить подписку", "База вопросов", "Бот для IT-знакомств", "База менторов", "Чаты сообщества"],
+            sizes=[2, 2, 2]
         )
     )

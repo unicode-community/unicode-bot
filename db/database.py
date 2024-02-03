@@ -45,6 +45,17 @@ class Database:
         async with self.async_session.begin() as session:
             session.add(Mentor(**kwargs))
 
+    async def unsubscribe_user(self, tg_id: int):
+        stmt = (
+            delete(User).
+            where(
+                User.tg_id == tg_id
+            )
+        )
+        async with self.async_session.begin() as session:
+            await session.execute(stmt)
+            await session.commit()
+
     async def delete_mentor(self, tg_id: int):
         stmt = (
             delete(Mentor).

@@ -10,7 +10,6 @@ router = Router()
 @router.message(F.text.lower() == "оформить подписку")
 async def subscribe(message: types.Message, db: Database) -> None:
     user_info = await db.get_subscriber(user_id=message.from_user.id)
-
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
 
     if is_subscriber:
@@ -22,6 +21,24 @@ async def subscribe(message: types.Message, db: Database) -> None:
         await message.answer(
             text="Пожалуйста, выбери тип подписки, который тебя интересует",
             reply_markup=reply_builder(text=["Unicode Base (499 ₽/мес)"])
+        )
+
+
+@router.message(F.text.lower() == "отменить подписку")
+async def unsubscribe(message: types.Message, db: Database) -> None:
+    user_info = await db.get_subscriber(user_id=message.from_user.id)
+    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
+
+    if not is_subscriber:
+        await message.answer(
+            text="В данный момент у тебя нет активной подписки.",
+            reply_markup=reply_builder(["В главное меню"])
+        )
+    else:
+        await db.unsubscribe_user(tg_id=message.from_user.id)
+        await message.answer(
+            text="Твоя подписка успешно отменена!",
+            reply_markup=reply_builder(["В главное меню"])
         )
 
 
@@ -38,9 +55,7 @@ async def base_subscription(message: types.Message, db: Database) -> None:
             "subscription_start": datetime.now(),
             "subscription_end": datetime.now() + timedelta(days=30)
         }
-
         await db.new_subscriber(**subscriber_info)
-
         await message.answer(
             text="Оплата прошла успешно! Добро пожаловать в Unicode 💜!",
             reply_markup=reply_builder(text=["В главное меню"])
