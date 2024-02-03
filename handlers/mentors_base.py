@@ -28,7 +28,7 @@ async def become_mentor(message: types.Message, db: Database, state: FSMContext)
     if not is_subscriber:
         await message.answer(
             text=error_no_subscr_for_mentors_base,
-            reply_markup=reply_builder(["Оформить подписку", "Назад", "В главное меню"])
+            reply_markup=reply_builder(["Оформить подписку", "В главное меню"])
         )
     else:
         is_mentor = await db.get_mentor(tg_id=message.from_user.id)
@@ -36,12 +36,12 @@ async def become_mentor(message: types.Message, db: Database, state: FSMContext)
         if is_mentor:
             await message.answer(
                 text="Твоя анкета уже есть в таблице менторов. Что с ней сделать?",
-                reply_markup=reply_builder(text=["Изменить", "Удалить", "Назад", "В главное меню"], sizes=[2, 2])
+                reply_markup=reply_builder(text=["Изменить", "Удалить", "В главное меню"], sizes=[2, 1])
             )
         else:
             await message.answer(
                 text=mentors_instructions,
-                reply_markup=reply_builder(text=["Заполнить анкету", "Назад", "В главное меню"], sizes=[1, 2])
+                reply_markup=reply_builder(text=["Заполнить анкету", "В главное меню"])
             )
         await state.set_state(Mentor.actions)
 
@@ -81,7 +81,7 @@ async def fill_mentor_form(message: types.Message, state: FSMContext) -> None:
 
     await message.answer(
         text="Как тебя зовут?",
-        reply_markup=reply_builder(["Назад", "В главное меню"])
+        reply_markup=reply_builder(["В главное меню"])
     )
     await state.set_state(Mentor.name)
 
@@ -91,7 +91,7 @@ async def name_mentor(message: types.Message, state: FSMContext) -> None:
     await state.update_data(name=message.text)
     await message.answer(
         text="По какой теме ты консультируешь?",
-        reply_markup=reply_builder(["Назад", "В главное меню"])
+        reply_markup=reply_builder(["В главное меню"])
     )
     await state.set_state(Mentor.descr)
 
@@ -101,7 +101,7 @@ async def descr_mentor(message: types.Message, state: FSMContext) -> None:
     await state.update_data(descr=message.text)
     await message.answer(
         text="Напиши цену твоей услуги",
-        reply_markup=reply_builder(text=["Бесплатно", "Назад", "В главное меню"], sizes=[1, 2])
+        reply_markup=reply_builder(text=["Бесплатно", "В главное меню"], sizes=[1, 1])
     )
     await state.set_state(Mentor.price)
 
