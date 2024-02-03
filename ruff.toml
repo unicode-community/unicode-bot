@@ -1,0 +1,19 @@
+line-length = 120
+
+[lint]
+select = [
+    "I", # isort
+    "E", # pycodestyle
+    "F", # pyflakes
+    "W", # pycodestyle,
+    "N", # pep8-naming
+    "Q", # flake8-quotes
+    "ARG", # flake8-unused-arguments
+]
+
+ignore = [
+    "E501"
+]
+
+[format]
+quote-style = "double"

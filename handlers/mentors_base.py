@@ -1,10 +1,11 @@
-from aiogram import Bot, Dispatcher, types, Router, F
-from aiogram.filters import CommandStart
-from keyboards.builders import reply_builder
-from messages import mentors_welcome, link_to_mentors_base, error_no_subscr_for_mentors_base, mentors_instructions
 from datetime import datetime
-from db.database import Database
+
+from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
+
+from db.database import Database
+from keyboards.builders import reply_builder
+from messages import error_no_subscr_for_mentors_base, link_to_mentors_base, mentors_instructions, mentors_welcome
 from utils.states import Mentor
 
 router = Router()
@@ -12,18 +13,18 @@ router = Router()
 @router.message(F.text.lower() == "база менторов")
 async def mentors_base(message: types.Message) -> None:
     await message.answer(
-        text=mentors_welcome, 
+        text=mentors_welcome,
         reply_markup=reply_builder(
             text=["Перейти в базу менторов", "Стать ментором", "В главное меню"]
         )
     )
-    
+
 @router.message(F.text.lower() == "стать ментором")
 async def become_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
     user_info = await db.get_subscriber(user_id=message.from_user.id)
-    
+
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-    
+
     if not is_subscriber:
         await message.answer(
             text=error_no_subscr_for_mentors_base,
@@ -31,7 +32,7 @@ async def become_mentor(message: types.Message, db: Database, state: FSMContext)
         )
     else:
         is_mentor = await db.get_mentor(tg_id=message.from_user.id)
-        
+
         if is_mentor:
             await message.answer(
                 text="Твоя анкета уже есть в таблице менторов. Что с ней сделать?",
@@ -43,10 +44,10 @@ async def become_mentor(message: types.Message, db: Database, state: FSMContext)
                 reply_markup=reply_builder(text=["Заполнить анкету", "Назад", "В главное меню"], sizes=[1, 2])
             )
         await state.set_state(Mentor.actions)
-        
+
 
 @router.message(Mentor.actions, F.text == "Удалить")
-async def delete_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
+async def delete_mentor(message: types.Message, state: FSMContext) -> None:
     await message.answer(
         text="Ты уверен что хочешь удалить свою анкету из таблицы менторов?",
         reply_markup=reply_builder(text=["Да", "Смотреть таблицу", "В главное меню"], sizes=[1, 2])
@@ -55,7 +56,7 @@ async def delete_mentor(message: types.Message, db: Database, state: FSMContext)
 
 
 @router.message(Mentor.actions, F.text == "Изменить")
-async def edit_mentor(message: types.Message, state: FSMContext, db: Database) -> None:
+async def edit_mentor(message: types.Message, db: Database) -> None:
     mentor_form = await db.get_mentor(tg_id=message.from_user.id)
     await message.answer(
         text=f"Имя: {mentor_form.name}\nОбласть: {mentor_form.descr}\nЦена: {mentor_form.price}",
@@ -74,16 +75,16 @@ async def confirm_delete_mentor(message: types.Message, db: Database, state: FSM
 
 
 @router.message(Mentor.actions, F.text == "Заполнить анкету")
-async def fill_mentor_form(message: types.Message, state: FSMContext, db: Database) -> None:
+async def fill_mentor_form(message: types.Message, state: FSMContext) -> None:
     await state.update_data(tg_id=message.from_user.id)
     await state.update_data(tg_username=message.from_user.username)
-    
+
     await message.answer(
         text="Как тебя зовут?",
         reply_markup=reply_builder(["Назад", "В главное меню"])
     )
     await state.set_state(Mentor.name)
-    
+
 
 @router.message(Mentor.name, F.text)
 async def name_mentor(message: types.Message, state: FSMContext) -> None:
@@ -93,7 +94,7 @@ async def name_mentor(message: types.Message, state: FSMContext) -> None:
         reply_markup=reply_builder(["Назад", "В главное меню"])
     )
     await state.set_state(Mentor.descr)
-    
+
 
 @router.message(Mentor.descr, F.text)
 async def descr_mentor(message: types.Message, state: FSMContext) -> None:
@@ -103,17 +104,17 @@ async def descr_mentor(message: types.Message, state: FSMContext) -> None:
         reply_markup=reply_builder(text=["Бесплатно", "Назад", "В главное меню"], sizes=[1, 2])
     )
     await state.set_state(Mentor.price)
-    
-    
+
+
 @router.message(Mentor.price, F.text)
 async def finish_mentor_form(message: types.Message, state: FSMContext, db: Database) -> None:
     await state.update_data(price=message.text)
-    
+
     # TODO добавление в airtable
 
     mentor_form = await state.get_data()
     await db.new_mentor(**mentor_form)
-    
+
     await message.answer(
         text="Отлично! Твоя анкета добавлена в таблицу",
         reply_markup=reply_builder(text=["Смотреть таблицу", "В главное меню"])
@@ -121,14 +122,12 @@ async def finish_mentor_form(message: types.Message, state: FSMContext, db: Data
     await state.clear()
 
 
-
-
 @router.message(F.text.lower() == "смотреть таблицу")
 @router.message(F.text.lower() == "перейти в базу менторов")
 async def redirect_mentors_base(message: types.Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer(
-        text=link_to_mentors_base, 
+        text=link_to_mentors_base,
         reply_markup=reply_builder(text=["В главное меню"]),
         disable_web_page_preview=True
     )

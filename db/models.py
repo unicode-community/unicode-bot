@@ -1,9 +1,9 @@
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, Integer, Text, DateTime
+from sqlalchemy import BigInteger, DateTime, Text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from datetime import datetime
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -29,4 +29,3 @@ class Mentor(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     descr: Mapped[str] = mapped_column(Text, nullable=False)
     price: Mapped[str] = mapped_column(Text, nullable=False)
-    

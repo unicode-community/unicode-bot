@@ -1,6 +1,4 @@
-from aiogram.types import KeyboardButtonPollType, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
-
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 start_kb = ReplyKeyboardMarkup(
     keyboard=[

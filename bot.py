@@ -1,10 +1,12 @@
 import asyncio
-import os
 import logging
-from aiogram import Bot, Dispatcher, types
+import os
+
+from aiogram import Bot, Dispatcher
 from dotenv import find_dotenv, load_dotenv
-from db.database import Database
+
 import handlers
+from db.database import Database
 
 load_dotenv(find_dotenv())
 ALLOWED_UPDATES = ["message", "edited_message"]
@@ -17,14 +19,14 @@ async def main() -> None:
     )
     dp = Dispatcher()
     db = Database()
-    
+
     dp.startup.register(db.create)
-    
+
     dp.include_routers(
         handlers.commands.router,
         handlers.subscribe.router,
         handlers.knowledge_base.router,
-        handlers.mentors_base.router,        
+        handlers.mentors_base.router,
         handlers.community_chats.router,
         handlers.networking_bot.router
     )

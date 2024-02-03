@@ -1,16 +1,16 @@
-from aiogram import Bot, Dispatcher, types, Router, F
-from aiogram.filters import CommandStart
-from keyboards.builders import reply_builder
-from messages import active_chats, active_chats_no_links, error_no_subscr_for_chats
-from db.database import Database
 from datetime import datetime, timedelta
+
+from aiogram import F, Router, types
+
+from db.database import Database
+from keyboards.builders import reply_builder
 
 router = Router()
 
 @router.message(F.text.lower() == "оформить подписку")
 async def subscribe(message: types.Message, db: Database) -> None:
     user_info = await db.get_subscriber(user_id=message.from_user.id)
-    
+
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
 
     if is_subscriber:

@@ -7,11 +7,4 @@ __all__ = [
     "networking_bot"
 ]
 
-from . import (
-    commands,
-    community_chats,
-    knowledge_base,
-    mentors_base,
-    subscribe,
-    networking_bot
-)
+from . import commands, community_chats, knowledge_base, mentors_base, networking_bot, subscribe

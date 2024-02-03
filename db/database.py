@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 from dotenv import load_dotenv
-from sqlalchemy import ScalarResult, and_, delete, or_, select, update
+from sqlalchemy import ScalarResult, delete, select
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import (
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from .models import Mentor, Base, User
+from .models import Base, Mentor, User
 
 load_dotenv()
 postgres_url = URL.create(
@@ -33,21 +33,17 @@ class Database:
             expire_on_commit=False
         )
 
-
     async def create(self) -> None:
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-
 
     async def new_subscriber(self, **kwargs) -> None:
         async with self.async_session.begin() as session:
             session.add(User(**kwargs))
 
-    
     async def new_mentor(self, **kwargs) -> None:
         async with self.async_session.begin() as session:
             session.add(Mentor(**kwargs))
-
 
     async def delete_mentor(self, tg_id: int):
         stmt = (
@@ -59,7 +55,6 @@ class Database:
         async with self.async_session.begin() as session:
             await session.execute(stmt)
             await session.commit()
-
 
     async def get_subscriber(self, user_id: Optional[int]=None, all_data: bool=False) -> Optional[ScalarResult]:
         stmt = (
@@ -73,14 +68,12 @@ class Database:
                 return data.scalars().one() if not all_data else data.scalars().all()
         except NoResultFound:
             return None
-    
-    
+
     async def get_mentor(self, tg_id: int) -> Optional[ScalarResult]:
         stmt = (
             select(Mentor).
             where(Mentor.tg_id == tg_id)
         )
-        
         try:
             async with self.async_session.begin() as session:
                 data = await session.execute(stmt)
