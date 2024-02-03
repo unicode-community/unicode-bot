@@ -19,7 +19,9 @@ class Interview(StatesGroup):
 
 class Mentor(StatesGroup):
     actions = State()
+    confirm_delete = State()
     name = State()
+    direction = State()
     descr = State()
     price = State()
-    confirm_delete = State()
+    contact = State()

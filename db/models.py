@@ -29,3 +29,6 @@ class Mentor(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     descr: Mapped[str] = mapped_column(Text, nullable=False)
     price: Mapped[str] = mapped_column(Text, nullable=False)
+    contact: Mapped[str] = mapped_column(Text, nullable=False)
+    direction: Mapped[str] = mapped_column(Text, nullable=False)
+

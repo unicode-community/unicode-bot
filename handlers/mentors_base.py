@@ -1,6 +1,7 @@
+import os
 from datetime import datetime
 
-from aiogram import F, Router, types
+from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 
 from db.database import Database
@@ -59,7 +60,7 @@ async def delete_mentor(message: types.Message, state: FSMContext) -> None:
 async def edit_mentor(message: types.Message, db: Database) -> None:
     mentor_form = await db.get_mentor(tg_id=message.from_user.id)
     await message.answer(
-        text=f"Имя: {mentor_form.name}\nОбласть: {mentor_form.descr}\nЦена: {mentor_form.price}",
+        text=f"Твоя анкета выглядит так:\n\nИмя: {mentor_form.name}\nНаправление: {mentor_form.direction}\nОписание: {mentor_form.descr}\nЦена: {mentor_form.price}\nКонтакт: {mentor_form.contact}",
         reply_markup=reply_builder(text=["В главное меню"])
     )
 
@@ -93,6 +94,16 @@ async def name_mentor(message: types.Message, state: FSMContext) -> None:
         text="По какой теме ты консультируешь?",
         reply_markup=reply_builder(["В главное меню"])
     )
+    await state.set_state(Mentor.direction)
+
+
+@router.message(Mentor.direction, F.text)
+async def direction_mentor(message: types.Message, state: FSMContext) -> None:
+    await state.update_data(direction=message.text)
+    await message.answer(
+        text="Напиши описание твоей услуги",
+        reply_markup=reply_builder(text=["В главное меню"])
+    )
     await state.set_state(Mentor.descr)
 
 
@@ -107,8 +118,18 @@ async def descr_mentor(message: types.Message, state: FSMContext) -> None:
 
 
 @router.message(Mentor.price, F.text)
-async def finish_mentor_form(message: types.Message, state: FSMContext, db: Database) -> None:
+async def price_mentor(message: types.Message, state: FSMContext) -> None:
     await state.update_data(price=message.text)
+    await message.answer(
+        text="Оставь свои контакты",
+        reply_markup=reply_builder(text=["В главное меню"])
+    )
+    await state.set_state(Mentor.contact)
+
+
+@router.message(Mentor.contact, F.text)
+async def finish_mentor_form(message: types.Message, bot: Bot, state: FSMContext, db: Database) -> None:
+    await state.update_data(contact=message.text)
 
     # TODO добавление в airtable
 
@@ -118,6 +139,11 @@ async def finish_mentor_form(message: types.Message, state: FSMContext, db: Data
     await message.answer(
         text="Отлично! Твоя анкета добавлена в таблицу",
         reply_markup=reply_builder(text=["Смотреть таблицу", "В главное меню"])
+    )
+
+    await bot.send_message(
+        chat_id=os.getenv("FORWADING_CHAT"),
+        text=f"Пользователь @{message.from_user.username}, {message.from_user.full_name} создал анкету ментора:\n\nИмя: {mentor_form['name']}\nНаправление: {mentor_form['direction']}\nОписание: {mentor_form['descr']}\nЦена: {mentor_form['price']}\nКонтакт: {mentor_form['contact']}",
     )
     await state.clear()
 
