@@ -17,8 +17,11 @@ async def community_chats(message: types.Message, db: Database) -> None:
         await message.answer(
             text=active_chats,
             disable_web_page_preview=True,
-            reply_markup=reply_builder(["В главное меню", "Оформить подписку"])
+            reply_markup=reply_builder(["В главное меню"])
         )
     else:
         await message.answer(text=error_no_subscr_for_chats)
-        await message.answer(text=active_chats_no_links)
+        await message.answer(
+            text=active_chats_no_links,
+            reply_markup=reply_builder(["В главное меню", "Оформить подписку"])
+        )
