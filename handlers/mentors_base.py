@@ -19,7 +19,8 @@ table = api.table(os.getenv("AIRTABLE_BASE_ID"), os.getenv("AIRTABLE_TABLE_ID"))
 
 
 @router.message(F.text.lower() == "база менторов")
-async def mentors_base(message: types.Message) -> None:
+async def mentors_base(message: types.Message, state: FSMContext) -> None:
+    await state.clear()
     await message.answer(
         text=mentors_welcome,
         reply_markup=reply_builder(
@@ -30,7 +31,6 @@ async def mentors_base(message: types.Message) -> None:
 @router.message(F.text.lower() == "стать ментором")
 async def become_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
     user_info = await db.get_subscriber(user_id=message.from_user.id)
-
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
 
     if not is_subscriber:
@@ -63,88 +63,128 @@ async def delete_mentor(message: types.Message, state: FSMContext) -> None:
     await state.set_state(Mentor.confirm_delete)
 
 
-@router.message(Mentor.actions, F.text == "Изменить")
-async def edit_mentor(message: types.Message, db: Database) -> None:
-    mentor_form = await db.get_mentor(tg_id=message.from_user.id)
-    await message.answer(
-        text=f"Твоя анкета выглядит так:\n\nИмя: {mentor_form.name}\nНаправление: {mentor_form.direction}\nОписание: {mentor_form.descr}\nЦена: {mentor_form.price}\nКонтакт: {mentor_form.contact}",
-        reply_markup=reply_builder(text=["В главное меню"])
-    )
-
-
 @router.message(Mentor.confirm_delete, F.text == "Да")
 async def confirm_delete_mentor(message: types.Message, bot: Bot, db: Database, state: FSMContext) -> None:
     mentor_info = await db.get_mentor(tg_id=message.from_user.id)
     try:
-        table.delete(mentor_info.airtable_id)
-    except Exception as e:
-        bot.send_message(
-            chat_id=os.getenv("FORWADING_CHAT"),
-            text=f"Ошибка при удалении анкеты пользователя @{message.from_user.username}, {message.from_user.full_name}\n\n{e}"
+        table.delete(record_id=mentor_info.airtable_record_id)
+        await db.delete_mentor(tg_id=message.from_user.id)
+        await message.answer(
+            text="Ваша анкета успешно удалена!",
+            reply_markup=reply_builder(text=["Смотреть таблицу", "В главное меню"])
         )
-    await db.delete_mentor(tg_id=message.from_user.id)
-    await message.answer(
-        text="Ваша анкета успешно удалена!",
-        reply_markup=reply_builder(text=["Смотреть таблицу", "В главное меню"])
-    )
+        await bot.send_message(
+            chat_id=os.getenv("FORWADING_CHAT"),
+            text=f"Ментор @{message.from_user.username}, {message.from_user.full_name} удалил анкету",
+            disable_web_page_preview=True,
+            parse_mode=None
+        )
+    except Exception as e:
+        await bot.send_message(
+            chat_id=os.getenv("FORWADING_CHAT"),
+            text=f"Ошибка при удалении анкеты пользователя @{message.from_user.username}, {message.from_user.full_name}\n\n{e}",
+            disable_web_page_preview=True,
+            parse_mode=None
+        )
+
     await state.clear()
 
 
+@router.message(Mentor.actions, F.text == "Изменить")
 @router.message(Mentor.actions, F.text == "Заполнить анкету")
-async def fill_mentor_form(message: types.Message, state: FSMContext) -> None:
+async def fill_mentor_form(message: types.Message, db: Database, state: FSMContext) -> None:
+    if message.text == "Изменить":
+        await state.update_data(action="change")
+    else:
+        await state.update_data(action="fill")
     await state.update_data(tg_id=message.from_user.id)
     await state.update_data(tg_username=message.from_user.username)
 
+    mentor_data_from_db = await db.get_mentor(tg_id=message.from_user.id)
+    buttons = ["Оставить текущее", "В главное меню"] if mentor_data_from_db else ["В главное меню"]
+    text = "Как тебя зовут?"
+    text += f"\n\nСейчас имя в твоей анкете: {mentor_data_from_db.name}" if mentor_data_from_db else ""
+
     await message.answer(
-        text="Как тебя зовут?",
-        reply_markup=reply_builder(["В главное меню"])
+        text=text,
+        reply_markup=reply_builder(text=buttons, sizes=[1, 1])
     )
     await state.set_state(Mentor.name)
 
 
 @router.message(Mentor.name, F.text)
-async def name_mentor(message: types.Message, state: FSMContext) -> None:
-    await state.update_data(name=message.text)
+async def name_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
+    mentor_data_from_db = await db.get_mentor(tg_id=message.from_user.id)
+    name = mentor_data_from_db.name if message.text == "Оставить текущее" else message.text
+    await state.update_data(name=name)
+    buttons = ["Оставить текущее", "В главное меню"] if mentor_data_from_db else ["В главное меню"]
+    text = "По какой теме ты консультируешь?"
+    text += f"\n\nСейчас направление в твоей анкете: {mentor_data_from_db.direction}" if mentor_data_from_db else ""
+
     await message.answer(
-        text="По какой теме ты консультируешь?",
-        reply_markup=reply_builder(["В главное меню"])
+        text=text,
+        reply_markup=reply_builder(text=buttons, sizes=[1, 1])
     )
     await state.set_state(Mentor.direction)
 
 
 @router.message(Mentor.direction, F.text)
-async def direction_mentor(message: types.Message, state: FSMContext) -> None:
-    await state.update_data(direction=message.text)
+async def direction_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
+    mentor_data_from_db = await db.get_mentor(tg_id=message.from_user.id)
+    direction = mentor_data_from_db.direction if message.text == "Оставить текущее" else message.text
+    await state.update_data(direction=direction)
+
+    buttons = ["Оставить текущее", "В главное меню"] if mentor_data_from_db else ["В главное меню"]
+    text = "Напиши описание твоей услуги"
+    text += f"\n\nСейчас описание в твоей анкете: {mentor_data_from_db.descr}" if mentor_data_from_db else ""
+
     await message.answer(
-        text="Напиши описание твоей услуги",
-        reply_markup=reply_builder(text=["В главное меню"])
+        text=text,
+        reply_markup=reply_builder(text=buttons, sizes=[1, 1])
     )
     await state.set_state(Mentor.descr)
 
 
 @router.message(Mentor.descr, F.text)
-async def descr_mentor(message: types.Message, state: FSMContext) -> None:
-    await state.update_data(descr=message.text)
+async def descr_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
+    mentor_data_from_db = await db.get_mentor(tg_id=message.from_user.id)
+    descr = mentor_data_from_db.descr if message.text == "Оставить текущее" else message.text
+    await state.update_data(descr=descr)
+
+    buttons = ["Бесплатно", "Оставить текущее", "В главное меню"] if mentor_data_from_db else ["Бесплатно", "В главное меню"]
+    text = "Напиши цену твоей услуги"
+    text += f"\n\nСейчас цена в твоей анкете: {mentor_data_from_db.price}" if mentor_data_from_db else ""
+
     await message.answer(
-        text="Напиши цену твоей услуги",
-        reply_markup=reply_builder(text=["Бесплатно", "В главное меню"], sizes=[1, 1])
+        text=text,
+        reply_markup=reply_builder(text=buttons, sizes=[2, 1])
     )
     await state.set_state(Mentor.price)
 
 
 @router.message(Mentor.price, F.text)
-async def price_mentor(message: types.Message, state: FSMContext) -> None:
-    await state.update_data(price=message.text)
+async def price_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
+    mentor_data_from_db = await db.get_mentor(tg_id=message.from_user.id)
+    price = mentor_data_from_db.price if message.text == "Оставить текущее" else message.text
+    await state.update_data(price=price)
+
+    buttons = ["Оставить текущее", "В главное меню"] if mentor_data_from_db else ["В главное меню"]
+    text = "Оставь свои контакты"
+    text += f"\n\nСейчас контакты в твоей анкете: {mentor_data_from_db.contact}" if mentor_data_from_db else ""
+
     await message.answer(
-        text="Оставь свои контакты",
-        reply_markup=reply_builder(text=["В главное меню"])
+        text=text,
+        reply_markup=reply_builder(text=buttons, sizes=[1, 1])
     )
+
     await state.set_state(Mentor.contact)
 
 
 @router.message(Mentor.contact, F.text)
 async def finish_mentor_form(message: types.Message, bot: Bot, state: FSMContext, db: Database) -> None:
-    await state.update_data(contact=message.text)
+    mentor_data_from_db = await db.get_mentor(tg_id=message.from_user.id)
+    contact = mentor_data_from_db.contact if message.text == "Оставить текущее" else message.text
+    await state.update_data(contact=contact)
 
     mentor_form = await state.get_data()
 
@@ -154,28 +194,64 @@ async def finish_mentor_form(message: types.Message, bot: Bot, state: FSMContext
         "Описание": mentor_form["descr"],
         "Цена": mentor_form["price"],
         "Контакт": mentor_form["contact"],
-        "tg_id": message.from_user.id
+        "tg_id": str(message.from_user.id)
     }
 
-    try:
-        airtable_record_id, _, _ = table.create(mentor_record).values()
-        mentor_form["airtable_record_id"] = airtable_record_id
-    except Exception as e:
-        bot.send_message(
-            chat_id=os.getenv("FORWADING_CHAT"),
-            text=f"Ошибка при создании анкеты пользователя @{message.from_user.username}, {message.from_user.full_name}\n\n{e}"
-        )
-    await db.new_mentor(**mentor_form)
+    action = mentor_form.pop("action")
+    if action == "change":
+        try:
+            airtable_record_id, _, _ = table.update(mentor_data_from_db.airtable_record_id, fields=mentor_record).values()
+            mentor_form["airtable_record_id"] = airtable_record_id
+            await db.mentor_update(user_id=message.from_user.id, **mentor_form)
+            await message.answer(
+                text="Отлично! Твоя анкета изменена",
+                reply_markup=reply_builder(text=["Смотреть таблицу", "В главное меню"])
+            )
+            await bot.send_message(
+                chat_id=os.getenv("FORWADING_CHAT"),
+                text=f"@{message.from_user.username}, {message.from_user.full_name} изменил анкету ментора:\n\n" + "\n".join([f"{key}: {value}" for key, value in mentor_record.items() if key != "tg_id"]),
+                disable_web_page_preview=True,
+                parse_mode=None
+            )
+        except Exception as e:
+            await message.answer(
+                text="Произошла ошибка при изменении анкеты",
+                reply_markup=reply_builder(text=["В главное меню"])
+            )
+            await bot.send_message(
+                chat_id=os.getenv("FORWADING_CHAT"),
+                text=f"Ошибка при изменении анкеты ментора @{message.from_user.username}, {message.from_user.full_name}\n\n{e}",
+                disable_web_page_preview=True,
+                parse_mode=None
+            )
+    elif action == "fill":
+        try:
+            airtable_record_id, _, _ = table.create(mentor_record).values()
+            mentor_form["airtable_record_id"] = airtable_record_id
+            await db.new_mentor(**mentor_form)
+            await message.answer(
+                text="Отлично! Твоя анкета добавлена в таблицу",
+                reply_markup=reply_builder(text=["Смотреть таблицу", "В главное меню"])
+            )
+            await bot.send_message(
+                chat_id=os.getenv("FORWADING_CHAT"),
+                text=f"@{message.from_user.username}, {message.from_user.full_name} создал анкету ментора:\n\n" + "\n".join([f"{key}: {value}" for key, value in mentor_record.items() if key != "tg_id"]),
+                disable_web_page_preview=True,
+                parse_mode=None
+            )
 
-    await message.answer(
-        text="Отлично! Твоя анкета добавлена в таблицу",
-        reply_markup=reply_builder(text=["Смотреть таблицу", "В главное меню"])
-    )
+        except Exception as e:
+            await message.answer(
+                text="Произошла ошибка при создании анкеты",
+                reply_markup=reply_builder(text=["В главное меню"])
+            )
+            await bot.send_message(
+                chat_id=os.getenv("FORWADING_CHAT"),
+                text=f"Ошибка при создании анкеты ментора @{message.from_user.username}, {message.from_user.full_name}\n\n{e}",
+                disable_web_page_preview=True,
+                parse_mode=None
+            )
 
-    await bot.send_message(
-        chat_id=os.getenv("FORWADING_CHAT"),
-        text=f"Пользователь @{message.from_user.username}, {message.from_user.full_name} создал анкету ментора:\n\n" + "\n".join([f"{key}: {value}" for key, value in mentor_record.items()])
-    )
     await state.clear()
 
 

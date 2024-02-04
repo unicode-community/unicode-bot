@@ -1,12 +1,9 @@
 import os
-from datetime import datetime
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
-from aiogram.types import ReplyKeyboardRemove
 from dotenv import find_dotenv, load_dotenv
 
-from db.database import Database
 from keyboards.builders import reply_builder
 from messages import link_to_questions_base, questions_welcome
 from utils.states import Interview, Material, Question
@@ -16,18 +13,17 @@ load_dotenv(find_dotenv())
 router = Router()
 
 @router.message(F.text.lower() == "база вопросов")
-async def knowledge_base(message: types.Message) -> None:
+async def knowledge_base(message: types.Message, state: FSMContext) -> None:
+    await state.clear()
     await message.answer(
         text=questions_welcome,
         reply_markup=reply_builder(["Пополнить базу", "Перейти в базу", "В главное меню"])
     )
 
-    # user_info = await db.get_subscriber(user_id=message.from_user.id)
-    # is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-
 
 @router.message(F.text.lower() == "перейти в базу")
-async def redirect_knowledge_base(message: types.Message) -> None:
+async def redirect_knowledge_base(message: types.Message, state: FSMContext) -> None:
+    await state.clear()
     await message.answer(
         text=link_to_questions_base,
         reply_markup=reply_builder(text=["В главное меню"]),
@@ -37,6 +33,7 @@ async def redirect_knowledge_base(message: types.Message) -> None:
 
 @router.message(F.text.lower() == "пополнить базу")
 async def topic_knowledge_base(message: types.Message, state: FSMContext) -> None:
+    state.clear()
     await message.answer(
         text="Выбери, что ты хочешь прислать",
         reply_markup=reply_builder(
@@ -44,7 +41,6 @@ async def topic_knowledge_base(message: types.Message, state: FSMContext) -> Non
             sizes=[3, 1]
         )
     )
-    await state.set_state()
 
 
 @router.message(F.text == "Список вопросов")
@@ -80,8 +76,10 @@ async def info_questions(message: types.Message, bot: Bot, state: FSMContext) ->
     await bot.send_message(
         chat_id=os.getenv("FORWADING_CHAT"),
         text=f"Прислал пользователь: @{message.from_user.username}, {message.from_user.full_name}\n\nТопик: {data['topic']}\nПозиция: {data['position']}\nВопросы:\n{data['info']}",
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
+        parse_mode=None
     )
+    await state.clear()
 
 
 @router.message(F.text == "Полезные материалы")
@@ -117,8 +115,10 @@ async def info_materials(message: types.Message, bot: Bot, state: FSMContext) ->
     await bot.send_message(
         chat_id=os.getenv("FORWADING_CHAT"),
         text=f"Прислал пользователь: @{message.from_user.username}, {message.from_user.full_name}\n\nТопик: {data['topic']}\nОписание: {data['descr']}\nМатериалы:\n{data['info']}",
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
+        parse_mode=None
     )
+    await state.clear()
 
 
 @router.message(F.text == "Резюме собеса")
@@ -164,5 +164,7 @@ async def info_interviews(message: types.Message, bot: Bot, state: FSMContext) -
     await bot.send_message(
         chat_id=os.getenv("FORWADING_CHAT"),
         text=f"Прислал пользователь: @{message.from_user.username}, {message.from_user.full_name}\n\nТопик: {data['topic']}\nДолжность: {data['position']}\nКомпания: {data['company']}\nВыжимка:\n{data['info']}",
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
+        parse_mode=None
     )
+    await state.clear()

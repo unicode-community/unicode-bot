@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from aiogram import F, Router, types
+from aiogram.fsm.context import FSMContext
 
 from db.database import Database
 from keyboards.builders import reply_builder
@@ -9,7 +10,8 @@ from messages import active_chats, active_chats_no_links, error_no_subscr_for_ch
 router = Router()
 
 @router.message(F.text.lower() == "чаты сообщества")
-async def community_chats(message: types.Message, db: Database) -> None:
+async def community_chats(message: types.Message, db: Database, state: FSMContext) -> None:
+    await state.clear()
     user_info = await db.get_subscriber(user_id=message.from_user.id)
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
 

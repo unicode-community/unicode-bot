@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 from dotenv import load_dotenv
-from sqlalchemy import ScalarResult, delete, select
+from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import (
@@ -91,3 +91,13 @@ class Database:
                 return data.scalars().one()
         except NoResultFound:
             return None
+
+    async def mentor_update(self, user_id: int, **kwargs) -> None:
+        stmt = (
+            update(Mentor).
+            where(Mentor.tg_id == user_id).
+            values(**kwargs)
+        )
+
+        async with self.async_session.begin() as session:
+            await session.execute(stmt)

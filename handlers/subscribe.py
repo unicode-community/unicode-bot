@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from aiogram import F, Router, types
+from aiogram.fsm.context import FSMContext
 
 from db.database import Database
 from keyboards.builders import reply_builder
@@ -8,7 +9,8 @@ from keyboards.builders import reply_builder
 router = Router()
 
 @router.message(F.text.lower() == "оформить подписку")
-async def subscribe(message: types.Message, db: Database) -> None:
+async def subscribe(message: types.Message, db: Database, state: FSMContext) -> None:
+    await state.clear()
     user_info = await db.get_subscriber(user_id=message.from_user.id)
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
 
@@ -25,7 +27,8 @@ async def subscribe(message: types.Message, db: Database) -> None:
 
 
 @router.message(F.text.lower() == "отменить подписку")
-async def unsubscribe(message: types.Message, db: Database) -> None:
+async def unsubscribe(message: types.Message, db: Database, state: FSMContext) -> None:
+    await state.clear()
     user_info = await db.get_subscriber(user_id=message.from_user.id)
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
 
@@ -43,7 +46,8 @@ async def unsubscribe(message: types.Message, db: Database) -> None:
 
 
 @router.message(F.text == "Unicode Base (499 ₽/мес)")
-async def base_subscription(message: types.Message, db: Database) -> None:
+async def base_subscription(message: types.Message, db: Database, state: FSMContext) -> None:
+    await state.clear()
     await message.answer(
         text="⚠️⚠️⚠️ ЗАГЛУШКА. ТУТ БУДЕТ ПРОЦЕСС ОПЛАТЫ" # TODO fix this
     )

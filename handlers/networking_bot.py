@@ -1,4 +1,5 @@
 from aiogram import F, Router, types
+from aiogram.fsm.context import FSMContext
 
 from keyboards.builders import reply_builder
 from messages import link_to_networking_bot, networkingbot_welcome
@@ -6,7 +7,8 @@ from messages import link_to_networking_bot, networkingbot_welcome
 router = Router()
 
 @router.message(F.text == "Бот для IT-знакомств")
-async def networking_bot(message: types.Message) -> None:
+async def networking_bot(message: types.Message, state: FSMContext) -> None:
+    await state.clear()
     await message.answer(
         text=networkingbot_welcome,
         reply_markup=reply_builder(
@@ -16,7 +18,8 @@ async def networking_bot(message: types.Message) -> None:
 
 
 @router.message(F.text == "Перейти в бота")
-async def redirect_networking_bot(message: types.Message) -> None:
+async def redirect_networking_bot(message: types.Message, state: FSMContext) -> None:
+    await state.clear()
     await message.answer(
         text=link_to_networking_bot,
         reply_markup=reply_builder(text=["В главное меню"]),
