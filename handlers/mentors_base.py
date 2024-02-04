@@ -4,6 +4,7 @@ from datetime import datetime
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 from dotenv import find_dotenv, load_dotenv
+from pyairtable import Api
 
 from db.database import Database
 from keyboards.builders import reply_builder
@@ -12,6 +13,10 @@ from utils.states import Mentor
 
 load_dotenv(find_dotenv())
 router = Router()
+
+api = Api(os.getenv("AIRTABLE_TOKEN"))
+table = api.table(os.getenv("AIRTABLE_BASE_ID"), os.getenv("AIRTABLE_TABLE_ID"))
+
 
 @router.message(F.text.lower() == "база менторов")
 async def mentors_base(message: types.Message) -> None:
@@ -68,7 +73,15 @@ async def edit_mentor(message: types.Message, db: Database) -> None:
 
 
 @router.message(Mentor.confirm_delete, F.text == "Да")
-async def confirm_delete_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
+async def confirm_delete_mentor(message: types.Message, bot: Bot, db: Database, state: FSMContext) -> None:
+    mentor_info = await db.get_mentor(tg_id=message.from_user.id)
+    try:
+        table.delete(mentor_info.airtable_id)
+    except Exception as e:
+        bot.send_message(
+            chat_id=os.getenv("FORWADING_CHAT"),
+            text=f"Ошибка при удалении анкеты пользователя @{message.from_user.username}, {message.from_user.full_name}\n\n{e}"
+        )
     await db.delete_mentor(tg_id=message.from_user.id)
     await message.answer(
         text="Ваша анкета успешно удалена!",
@@ -133,9 +146,25 @@ async def price_mentor(message: types.Message, state: FSMContext) -> None:
 async def finish_mentor_form(message: types.Message, bot: Bot, state: FSMContext, db: Database) -> None:
     await state.update_data(contact=message.text)
 
-    # TODO добавление в airtable
-
     mentor_form = await state.get_data()
+
+    mentor_record = {
+        "Имя": mentor_form["name"],
+        "Направление": mentor_form["direction"],
+        "Описание": mentor_form["descr"],
+        "Цена": mentor_form["price"],
+        "Контакт": mentor_form["contact"],
+        "tg_id": message.from_user.id
+    }
+
+    try:
+        airtable_record_id, _, _ = table.create(mentor_record).values()
+        mentor_form["airtable_record_id"] = airtable_record_id
+    except Exception as e:
+        bot.send_message(
+            chat_id=os.getenv("FORWADING_CHAT"),
+            text=f"Ошибка при создании анкеты пользователя @{message.from_user.username}, {message.from_user.full_name}\n\n{e}"
+        )
     await db.new_mentor(**mentor_form)
 
     await message.answer(
@@ -145,7 +174,7 @@ async def finish_mentor_form(message: types.Message, bot: Bot, state: FSMContext
 
     await bot.send_message(
         chat_id=os.getenv("FORWADING_CHAT"),
-        text=f"Пользователь @{message.from_user.username}, {message.from_user.full_name} создал анкету ментора:\n\nИмя: {mentor_form['name']}\nНаправление: {mentor_form['direction']}\nОписание: {mentor_form['descr']}\nЦена: {mentor_form['price']}\nКонтакт: {mentor_form['contact']}",
+        text=f"Пользователь @{message.from_user.username}, {message.from_user.full_name} создал анкету ментора:\n\n" + "\n".join([f"{key}: {value}" for key, value in mentor_record.items()])
     )
     await state.clear()
 

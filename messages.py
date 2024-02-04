@@ -61,8 +61,7 @@ UNI: база знаний
 """
 
 
-# TODO заменить ссылку на нормальную
-link_to_mentors_base = """[Редирект на таблицу менторов](https://www.youtube.com/watch?v=dQw4w9WgXcQ)"""
+link_to_mentors_base = """[Редирект на таблицу менторов](https://airtable.com/apphMruCEJJG0UCT5/shr71I9PGXzSNOND5)"""
 
 link_to_questions_base = """[Редирект на базу вопросов](baza.unicode.club)"""
 

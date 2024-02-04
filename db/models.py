@@ -31,4 +31,4 @@ class Mentor(Base):
     price: Mapped[str] = mapped_column(Text, nullable=False)
     contact: Mapped[str] = mapped_column(Text, nullable=False)
     direction: Mapped[str] = mapped_column(Text, nullable=False)
-
+    airtable_record_id: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
