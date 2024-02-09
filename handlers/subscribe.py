@@ -22,7 +22,7 @@ async def subscribe(message: types.Message, db: Database, state: FSMContext) -> 
     else:
         await message.answer(
             text="Пожалуйста, выбери тип подписки, который тебя интересует",
-            reply_markup=reply_builder(text=["Unicode Base (499 ₽/мес)"])
+            reply_markup=reply_builder(text=["В главное меню", "Unicode Base (499 ₽/мес)"])
         )
 
 

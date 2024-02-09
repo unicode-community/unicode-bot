@@ -1,9 +1,11 @@
 import os
+from datetime import datetime
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 from dotenv import find_dotenv, load_dotenv
 
+from db.database import Database
 from keyboards.builders import reply_builder
 from messages import link_to_questions_base, questions_welcome
 from utils.states import Interview, Material, Question
@@ -32,25 +34,42 @@ async def redirect_knowledge_base(message: types.Message, state: FSMContext) -> 
 
 
 @router.message(F.text.lower() == "пополнить базу")
-async def topic_knowledge_base(message: types.Message, state: FSMContext) -> None:
+async def topic_knowledge_base(message: types.Message, state: FSMContext, db: Database) -> None:
     state.clear()
-    await message.answer(
-        text="Выбери, что ты хочешь прислать",
-        reply_markup=reply_builder(
-            text=["Список вопросов", "Полезные материалы", "Резюме собеса", "В главное меню"],
-            sizes=[3, 1]
+    user_info = await db.get_subscriber(user_id=message.from_user.id)
+    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
+    if is_subscriber:
+        await message.answer(
+            text="Выбери, что ты хочешь прислать",
+            reply_markup=reply_builder(
+                text=["Список вопросов", "Полезные материалы", "Резюме собеса", "В главное меню"],
+                sizes=[3, 1]
+            )
         )
-    )
+    else:
+        await message.answer(
+            text="Извините, но пополнять базу знаний могут только подписчики сообщества",
+            reply_markup=reply_builder(["Оформить подписку", "В главное меню"])
+        )
 
 
 @router.message(F.text == "Список вопросов")
-async def topic_questions(message: types.Message, state: FSMContext) -> None:
-    await message.answer(
-        text="Напиши на какую должность ты хочешь прислать вопросы (например: `Python Developer`, `IOS Developer`, `Data Science` etc.)",
-        reply_markup=reply_builder(["В главное меню"])
-    )
-    await state.update_data(topic="Список вопросов")
-    await state.set_state(Question.position)
+async def topic_questions(message: types.Message, state: FSMContext, db: Database) -> None:
+    user_info = await db.get_subscriber(user_id=message.from_user.id)
+    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
+    if is_subscriber:
+        await message.answer(
+            text="Напиши на какую должность ты хочешь прислать вопросы (например: `Python Developer`, `IOS Developer`, `Data Science` etc.)",
+            reply_markup=reply_builder(["В главное меню"])
+        )
+        await state.update_data(topic="Список вопросов")
+        await state.set_state(Question.position)
+    else:
+        await message.answer(
+            text="Извините, но пополнять базу знаний могут только подписчики сообщества",
+            reply_markup=reply_builder(["Оформить подписку", "В главное меню"])
+        )
+        await state.clear()
 
 
 @router.message(Question.position, F.text)
@@ -83,13 +102,22 @@ async def info_questions(message: types.Message, bot: Bot, state: FSMContext) ->
 
 
 @router.message(F.text == "Полезные материалы")
-async def topic_materials(message: types.Message, state: FSMContext) -> None:
-    await message.answer(
-        text="Пожалуйста, опиши, что за материалы ты хочешь прислать",
-        reply_markup=reply_builder(["В главное меню"])
-    )
-    await state.update_data(topic="Полезные материалы")
-    await state.set_state(Material.descr)
+async def topic_materials(message: types.Message, state: FSMContext, db: Database) -> None:
+    user_info = await db.get_subscriber(user_id=message.from_user.id)
+    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
+    if is_subscriber:
+        await message.answer(
+            text="Пожалуйста, опиши, что за материалы ты хочешь прислать",
+            reply_markup=reply_builder(["В главное меню"])
+        )
+        await state.update_data(topic="Полезные материалы")
+        await state.set_state(Material.descr)
+    else:
+        await message.answer(
+            text="Извините, но пополнять базу знаний могут только подписчики сообщества",
+            reply_markup=reply_builder(["Оформить подписку", "В главное меню"])
+        )
+        await state.clear()
 
 
 @router.message(Material.descr, F.text)
@@ -122,14 +150,22 @@ async def info_materials(message: types.Message, bot: Bot, state: FSMContext) ->
 
 
 @router.message(F.text == "Резюме собеса")
-async def topic_interviews(message: types.Message, state: FSMContext) -> None:
-    await message.answer(
-        text="Пожалуйста, напиши на какую должность ты хочешь прислать выжимку (например: `Python Developer`, `IOS Developer`, `Data Science` etc.)",
-        reply_markup=reply_builder(["В главное меню"])
-    )
-    await state.update_data(topic="Резюме собеса")
-    await state.set_state(Interview.position)
-
+async def topic_interviews(message: types.Message, state: FSMContext, db: Database) -> None:
+    user_info = await db.get_subscriber(user_id=message.from_user.id)
+    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
+    if is_subscriber:
+        await message.answer(
+            text="Пожалуйста, напиши на какую должность ты хочешь прислать выжимку (например: `Python Developer`, `IOS Developer`, `Data Science` etc.)",
+            reply_markup=reply_builder(["В главное меню"])
+        )
+        await state.update_data(topic="Резюме собеса")
+        await state.set_state(Interview.position)
+    else:
+        await message.answer(
+            text="Извините, но пополнять базу знаний могут только подписчики сообщества",
+            reply_markup=reply_builder(["Оформить подписку", "В главное меню"])
+        )
+        await state.clear()
 
 @router.message(Interview.position, F.text)
 async def position_interviews(message: types.Message, state: FSMContext) -> None:
