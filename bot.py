@@ -3,6 +3,7 @@ import logging
 import os
 
 from aiogram import Bot, Dispatcher
+from aiogram.types import BotCommand
 from dotenv import find_dotenv, load_dotenv
 
 import handlers
@@ -31,8 +32,10 @@ async def main() -> None:
         handlers.networking_bot.router
     )
 
+    await bot.set_my_commands(commands=[BotCommand(command="menu", description="⚙️ Главное меню")])
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot, db=db)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

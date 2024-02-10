@@ -25,3 +25,7 @@ class Mentor(StatesGroup):
     descr = State()
     price = State()
     contact = State()
+
+
+class Subscription(StatesGroup):
+    confirm_delete = State()
