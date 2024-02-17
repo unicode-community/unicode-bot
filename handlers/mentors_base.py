@@ -46,7 +46,7 @@ async def become_mentor(message: types.Message, db: Database, state: FSMContext)
         is_mentor = await db.get_mentor(tg_id=message.from_user.id)
         if is_mentor:
             await message.answer(
-                text="Твоя анкета уже есть в таблице менторов. Что с ней сделать?",
+                text="🤔 Твоя анкета уже есть в таблице менторов. Что с ней сделать?",
                 reply_markup=reply_builder(text=["Изменить", "Удалить", "В главное меню"], sizes=[2, 1])
             )
         else:
@@ -64,7 +64,7 @@ async def delete_mentor(message: types.Message, state: FSMContext) -> None:
         reply_markup=reply_builder(text=["Да", "В главное меню"], sizes=[1, 1])
     )
     await message.answer(
-        text="Ты уверен что хочешь удалить свою анкету из таблицы менторов?",
+        text="❓ Ты уверен, что хочешь удалить свою анкету из таблицы менторов?",
         reply_markup=redirect_mentors_base
     )
     await state.set_state(Mentor.confirm_delete)
@@ -81,7 +81,7 @@ async def confirm_delete_mentor(message: types.Message, bot: Bot, db: Database, 
             reply_markup=reply_builder(text=["В главное меню"])
         )
         await message.answer(
-            text="Ваша анкета успешно удалена!",
+            text="✅ Анкета успешно удалена!",
             reply_markup=redirect_mentors_base
         )
         await bot.send_message(
@@ -219,7 +219,7 @@ async def finish_mentor_form(message: types.Message, bot: Bot, state: FSMContext
                 reply_markup=reply_builder(text=["В главное меню"])
             )
             await message.answer(
-                text="Отлично! Твоя анкета изменена",
+                text="✅ Отлично! Твоя анкета изменена",
                 reply_markup=redirect_mentors_base
             )
             await bot.send_message(
@@ -254,7 +254,7 @@ async def finish_mentor_form(message: types.Message, bot: Bot, state: FSMContext
                 reply_markup=reply_builder(text=["В главное меню"])
             )
             await message.answer(
-                text="Отлично! Твоя анкета добавлена в таблицу",
+                text="✅ Отлично! Твоя анкета добавлена в таблицу",
                 reply_markup=redirect_mentors_base
             )
             await bot.send_message(
@@ -271,7 +271,7 @@ async def finish_mentor_form(message: types.Message, bot: Bot, state: FSMContext
 
         except Exception as e:
             await message.answer(
-                text="Произошла ошибка при создании анкеты",
+                text="*⚠️ При создании анкеты возникла ошибка.* Пожалуйста, попробуй снова, либо обратись в поддержку.",
                 reply_markup=reply_builder(text=["В главное меню"])
             )
             await bot.send_message(
