@@ -101,3 +101,7 @@ class Database:
 
         async with self.async_session.begin() as session:
             await session.execute(stmt)
+
+async def get_db():
+    db = Database()
+    yield db
