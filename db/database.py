@@ -102,7 +102,6 @@ class Database:
         async with self.async_session.begin() as session:
             await session.execute(stmt)
 
-
     async def subscriber_update(self, user_id: int, **kwargs) -> None:
         stmt = (
             update(User).
@@ -112,3 +111,7 @@ class Database:
 
         async with self.async_session.begin() as session:
             await session.execute(stmt)
+
+    async def get_db():
+        db = Database()
+        yield db
