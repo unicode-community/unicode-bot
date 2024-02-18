@@ -36,11 +36,11 @@ async def mentors_base(message: types.Message, state: FSMContext) -> None:
 async def become_mentor(message: types.Message, db: Database, state: FSMContext) -> None:
     user_info = await db.get_subscriber(user_id=message.from_user.id)
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-
     if not is_subscriber:
+        buttons = ["Изменить подписку", "В главное меню"] if user_info.subscription_type == "unicode_guest" else ["Оформить подписку", "В главное меню"]
         await message.answer(
             text=error_no_subscr_for_mentors_base,
-            reply_markup=reply_builder(["Оформить подписку", "В главное меню"], sizes=[1, 1])
+            reply_markup=reply_builder(text=buttons, sizes=[1, 1])
         )
     else:
         is_mentor = await db.get_mentor(tg_id=message.from_user.id)

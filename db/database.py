@@ -101,3 +101,14 @@ class Database:
 
         async with self.async_session.begin() as session:
             await session.execute(stmt)
+
+
+    async def subscriber_update(self, user_id: int, **kwargs) -> None:
+        stmt = (
+            update(User).
+            where(User.tg_id == user_id).
+            values(**kwargs)
+        )
+
+        async with self.async_session.begin() as session:
+            await session.execute(stmt)

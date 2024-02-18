@@ -15,17 +15,12 @@ async def networking_bot(message: types.Message, state: FSMContext, db: Database
     await state.clear()
     user_info = await db.get_subscriber(user_id=message.from_user.id)
     is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-    if is_subscriber:
-        await message.answer(
-            text="🦄",
-            reply_markup=reply_builder(["В главное меню"])
-        )
-        await message.answer(
-            text=networkingbot_welcome,
-            reply_markup=redirect_networking_bot
-        )
-    else:
-        await message.answer(
-            text="Извините, но доступ к боту для знакомств есть только у подписчиков сообщества",
-            reply_markup=reply_builder(["Оформить подписку", "В главное меню"], sizes=[1, 1])
-        )
+    buttons = ["В главное меню"] if is_subscriber else ["Оформить подписку", "В главное меню"]
+    await message.answer(
+        text="🦄",
+        reply_markup=reply_builder(text=buttons, sizes=[1, 1])
+    )
+    await message.answer(
+        text=networkingbot_welcome,
+        reply_markup=redirect_networking_bot
+    )

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, DateTime, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, Text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -18,6 +18,8 @@ class User(Base):
     subscription_type: Mapped[str] = mapped_column(Text, nullable=True)
     subscription_start: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     subscription_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    is_subscribed_to_payments: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    payment_method_id: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class Mentor(Base):

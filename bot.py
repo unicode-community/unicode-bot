@@ -18,6 +18,7 @@ async def main() -> None:
         token=os.getenv("BOT_TOKEN"),
         parse_mode="Markdown"
     )
+    bot.admins_list = [int(os.getenv("ADMIN_ID")), int(os.getenv("DEV_ID"))]
     dp = Dispatcher()
     db = Database()
 
@@ -29,7 +30,8 @@ async def main() -> None:
         handlers.knowledge_base.router,
         handlers.mentors_base.router,
         handlers.community_chats.router,
-        handlers.networking_bot.router
+        handlers.networking_bot.router,
+        handlers.admin.router
     )
 
     await bot.set_my_commands(commands=[BotCommand(command="menu", description="⚙️ Главное меню")])
