@@ -28,4 +28,7 @@ class Mentor(StatesGroup):
 
 
 class Subscription(StatesGroup):
+    change_subscription = State()
     confirm_delete = State()
+    extend_subscription = State()
+

@@ -23,3 +23,13 @@ unicode_chats = InlineKeyboardMarkup(
         [InlineKeyboardButton(text="UNI: база знаний", url="https://t.me/+UWs3Kbqu6uUzNWZi")]
     ]
 )
+
+
+def create_kb_to_payment(url: str, payment_id: str, subscription_type: str, extend: bool = False) -> InlineKeyboardMarkup:
+    action = "Оплатить" if not extend else "Продлить"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=f"💵 {action} подписку {subscription_type}", url=url)],
+            [InlineKeyboardButton(text="🔍 Проверить оплату", callback_data=f"check_payment_{payment_id}")]
+        ]
+    )

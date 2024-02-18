@@ -14,5 +14,5 @@ async def start_cmd(message: types.Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer(
         text=main_welcome,
-        reply_markup=start_kb
+        reply_markup=start_kb,
     )

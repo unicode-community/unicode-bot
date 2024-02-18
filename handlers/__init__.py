@@ -4,7 +4,8 @@ __all__ = [
     "mentors_base",
     "subscribe",
     "knowledge_base",
-    "networking_bot"
+    "networking_bot",
+    "admin"
 ]
 
-from . import commands, community_chats, knowledge_base, mentors_base, networking_bot, subscribe
+from . import admin, commands, community_chats, knowledge_base, mentors_base, networking_bot, subscribe
