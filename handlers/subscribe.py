@@ -2,26 +2,21 @@ import os
 import uuid
 from datetime import datetime, timedelta
 
-from aiogram import Bot, F, Router, types
+import pytz
+from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
 from dotenv import find_dotenv, load_dotenv
-
-# from icecream import ic
+from icecream import ic
 from yookassa import Configuration, Payment
 
+import keyboards.subscribe as keyboards
 from db.database import Database
-from keyboards.builders import reply_builder
-from keyboards.inline import create_kb_to_payment
-from messages import (
-    cancel_subscription,
-    subscription_type_info,
-    subscription_type_info_with_time,
-    subscriptions_welcome,
-    unicode_base_info,
-    unicode_guest_info,
-)
-from utils.payments import unicode_base_params, unicode_guest_params
-from utils.states import Subscription
+from keyboards.general import return_to_menu, write_to_support_and_return_to_menu
+from keyboards.subscribe import create_kb_to_payment
+from messages import subscribe as messages
+from utils import get_subscription_status
+from utils.payments import unicode_base_params, unicode_guest_params, unicode_starter_params
+from utils.subscriptions import match_subscription, unicode_base, unicode_guest, unicode_starter
 
 router = Router()
 load_dotenv(find_dotenv())
@@ -30,304 +25,197 @@ Configuration.account_id = os.getenv("YOOKASSA_SHOP_ID")
 Configuration.secret_key = os.getenv("YOOKASSA_SECRET_KEY")
 
 
-subscriptions = {
-    "unicode_guest": "👤 Unicode Guest (99 ₽/мес)",
-    "unicode_base": "🟣 Unicode Base (499 ₽/мес)"
-}
-
-@router.message(F.text.lower() == "подписка")
-async def subscribe(message: types.Message, db: Database, state: FSMContext):
+@router.callback_query(F.data == "unicode_subscribe")
+async def subscribe(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
     await state.clear()
-    user_info = await db.get_subscriber(user_id=message.from_user.id)
-    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-    if is_subscriber:
-        if user_info.is_subscribed_to_payments:
-            await message.answer(
-                text=subscription_type_info.format(
-                    subscription_type=subscriptions[user_info.subscription_type]
-                ),
-                reply_markup=reply_builder(["Изменить подписку", "Отменить подписку", "В главное меню"], sizes=[2, 1])
+
+    subscr_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
+
+    if subscr_info["is_subscriber"]:
+        txt = messages.welcome_subscribe
+        txt += "\n\n" + messages.current_subscr.format(
+            subscr=match_subscription[subscr_info["subscription_db_name"]].name,
+            price=match_subscription[subscr_info["subscription_db_name"]].price
+        )
+        if not subscr_info["is_subscribed_to_payments"]:
+            txt += "\n\n" + messages.last_active_time_subscr.format(date=subscr_info["subscription_end"].strftime("%d.%m.%Y %H:%M"))
+            txt += "\n\n" + messages.choice_type_subscr
+        else:
+            txt += "\n\n" + messages.choice_update_or_break_subscr
+
+        if not subscr_info["is_subscribed_to_payments"]:
+            await callback.message.answer(
+                text=txt,
+                reply_markup=keyboards.choice_subscr_type_and_return_to_menu
             )
         else:
-            await message.answer(
-                text=subscription_type_info_with_time.format(
-                    subscription_type=subscriptions[user_info.subscription_type],
-                    subscription_end=user_info.subscription_end.strftime("%d.%m.%Y %H:%M")
-                ),
-                reply_markup=reply_builder(["Продлить подписку", "В главное меню"], sizes=[1, 1])
+            await callback.message.answer(
+                text=txt,
+                reply_markup=keyboards.choice_subscr_type_and_break_subscr_and_return_to_menu
             )
+
     else:
-        await message.answer(
-            text="🚫 В данный момент у тебя нет активной подписки.",
-            reply_markup=reply_builder(["Оформить подписку", "В главное меню"], sizes=[1, 1])
+        await callback.message.answer(
+            text=messages.welcome_subscribe + "\n\n" + messages.choice_type_subscr,
+            reply_markup=keyboards.choice_subscr_type_and_return_to_menu
         )
 
-
-@router.message(F.text == "Изменить подписку")
-async def change_subscription_type(message: types.Message, state: FSMContext):
-    await message.answer(
-        text=subscriptions_welcome,
-        reply_markup=reply_builder(text=["👤 Unicode Guest (99 ₽/мес)", "🟣 Unicode Base (499 ₽/мес)", "В главное меню"], sizes=[2, 1])
-    )
-
-    await state.set_state(Subscription.change_subscription)
+    await callback.answer()
 
 
-@router.message(Subscription.change_subscription, F.text == "👤 Unicode Guest (99 ₽/мес)")
-async def change_subscription_guest(message: types.Message, db: Database, state: FSMContext):
-    user_info = await db.get_subscriber(user_id=message.from_user.id)
-    if message.text == subscriptions[user_info.subscription_type]:
-        await message.answer(
-            text="✅ Данный вид подписки уже активирован.",
-            reply_markup=reply_builder(["В главное меню"])
+@router.callback_query(F.data == "unicode_guest")
+async def pay_unicode_guest(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
+    await state.clear()
+
+    subscr_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
+
+    if (subscr_info["subscription_db_name"] == "unicode_guest") and (subscr_info["is_subscribed_to_payments"]):
+        await callback.message.answer(
+            text=messages.already_activated_subscr,
+            reply_markup=return_to_menu
         )
     else:
-        await message.answer(
-            text="🦄",
-            reply_markup=reply_builder(["В главное меню"])
-        )
-
         idempotence_key = str(uuid.uuid4())
         payment = Payment.create(unicode_guest_params, idempotence_key)
 
-        await message.answer(
-            text=unicode_guest_info,
-            reply_markup=create_kb_to_payment(
-                url=payment.confirmation.confirmation_url,
-                payment_id=payment.id,
-                subscription_type="👤 Unicode Guest"
-            )
+        await callback.message.answer(
+            text=messages.unicode_guest_info,
+            reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id)
         )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "unicode_starter")
+async def pay_unicode_starter(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
     await state.clear()
 
+    subscr_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
 
-@router.message(Subscription.change_subscription, F.text == "🟣 Unicode Base (499 ₽/мес)")
-async def change_subscription_base(message: types.Message, db: Database, state: FSMContext):
-    user_info = await db.get_subscriber(user_id=message.from_user.id)
-    if message.text == subscriptions[user_info.subscription_type]:
-        await message.answer(
-            text="✅ Данный вид подписки уже активирован.",
-            reply_markup=reply_builder(["В главное меню"])
+    if (subscr_info["subscription_db_name"] == "unicode_starter") and (subscr_info["is_subscribed_to_payments"]):
+        await callback.message.answer(
+            text=messages.already_activated_subscr,
+            reply_markup=return_to_menu
         )
     else:
-        await message.answer(
-            text="🦄",
-            reply_markup=reply_builder(["В главное меню"])
-        )
+        idempotence_key = str(uuid.uuid4())
+        payment = Payment.create(unicode_starter_params, idempotence_key)
 
+        await callback.message.answer(
+            text=messages.unicode_starter_info,
+            reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id)
+        )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "unicode_base")
+async def pay_unicode_base(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
+    await state.clear()
+
+    subscr_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
+
+    if (subscr_info["subscription_db_name"] == "unicode_base") and (subscr_info["is_subscribed_to_payments"]):
+        await callback.message.answer(
+            text=messages.already_activated_subscr,
+            reply_markup=return_to_menu
+        )
+    else:
         idempotence_key = str(uuid.uuid4())
         payment = Payment.create(unicode_base_params, idempotence_key)
 
-        await message.answer(
-            text=unicode_base_info,
-            reply_markup=create_kb_to_payment(
-                url=payment.confirmation.confirmation_url,
-                payment_id=payment.id,
-                subscription_type="🟣 Unicode Base"
-            )
+        await callback.message.answer(
+            text=messages.unicode_base_info,
+            reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id)
         )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "break_subscr")
+async def break_subscr(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
     await state.clear()
 
+    user_info = await db.get_user(user_id=callback.from_user.id)
 
-@router.message(F.text == "Продлить подписку")
-async def extend_subscription(message: types.Message, state: FSMContext):
-    #TODO сделать проверку что чел может продлевать
-    await message.answer(
-        text=subscriptions_welcome,
-        reply_markup=reply_builder(text=["👤 Unicode Guest (99 ₽/мес)", "🟣 Unicode Base (499 ₽/мес)", "В главное меню"], sizes=[2, 1])
+    subscr_end_date = user_info.subscription_end.strftime("%d.%m.%Y %H:%M")
+
+    await callback.message.answer(
+        text=messages.break_subscr.format(date=subscr_end_date),
+        reply_markup=keyboards.confirm_break_subscr_and_return_to_menu
     )
-    await state.set_state(Subscription.extend_subscription)
+    await callback.answer()
 
 
-@router.message(Subscription.extend_subscription, F.text == "👤 Unicode Guest (99 ₽/мес)")
-async def extend_subscription_guest(message: types.Message, state: FSMContext):
-    await message.answer(
-        text="🦄",
-        reply_markup=reply_builder(["В главное меню"])
-    )
-
-    idempotence_key = str(uuid.uuid4())
-    payment = Payment.create(unicode_guest_params, idempotence_key)
-
-    await message.answer(
-        text=unicode_guest_info,
-        reply_markup=create_kb_to_payment(
-            url=payment.confirmation.confirmation_url,
-            payment_id=payment.id,
-            subscription_type="👤 Unicode Guest",
-            extend=True
-        )
-    )
+@router.callback_query(F.data == "confirm_break_subscr")
+async def confirm_break_subscr(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
     await state.clear()
 
-
-@router.message(Subscription.extend_subscription, F.text == "🟣 Unicode Base (499 ₽/мес)")
-async def extend_subscription_base(message: types.Message, state: FSMContext):
-    await message.answer(
-        text="🦄",
-        reply_markup=reply_builder(["В главное меню"])
+    await db.user_update(
+        user_id=callback.from_user.id,
+        **{"payment_method_id": None, "is_subscribed_to_payments": False}
     )
 
-    idempotence_key = str(uuid.uuid4())
-    payment = Payment.create(unicode_base_params, idempotence_key)
-
-    await message.answer(
-        text=unicode_base_info,
-        reply_markup=create_kb_to_payment(
-            url=payment.confirmation.confirmation_url,
-            payment_id=payment.id,
-            subscription_type="🟣 Unicode Base",
-            extend=True
-        )
+    await callback.message.answer(
+        text=messages.succesful_break_subscr,
+        reply_markup=return_to_menu
     )
-    await state.clear()
-
-
-
-@router.message(F.text.lower() == "оформить подписку")
-async def get_subscribe(message: types.Message, db: Database, state: FSMContext) -> None:
-    await state.clear()
-    user_info = await db.get_subscriber(user_id=message.from_user.id)
-    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-
-    if is_subscriber:
-        await message.answer(
-            text="✅ Твоя подписка активна. Пользуйся ей с умом...",
-            reply_markup=reply_builder(["В главное меню"])
-        )
-    else:
-        await message.answer(
-            text=subscriptions_welcome,
-            reply_markup=reply_builder(text=["👤 Unicode Guest (99 ₽/мес)", "🟣 Unicode Base (499 ₽/мес)", "В главное меню"], sizes=[2, 1])
-        )
-
-
-@router.message(F.text == "👤 Unicode Guest (99 ₽/мес)")
-async def subscription_unicode_guest(message: types.Message, db: Database) -> None:
-    user_info = await db.get_subscriber(user_id=message.from_user.id)
-    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-
-    if not is_subscriber:
-        await message.answer(
-            text="🦄",
-            reply_markup=reply_builder(["В главное меню"])
-        )
-
-        idempotence_key = str(uuid.uuid4())
-        payment = Payment.create(unicode_guest_params, idempotence_key)
-
-        await message.answer(
-            text=unicode_guest_info,
-            reply_markup=create_kb_to_payment(
-                url=payment.confirmation.confirmation_url,
-                payment_id=payment.id,
-                subscription_type="👤 Unicode Guest"
-            )
-        )
-
-@router.message(F.text == "🟣 Unicode Base (499 ₽/мес)")
-async def subscription_unicode_base(message: types.Message, db: Database) -> None:
-    user_info = await db.get_subscriber(user_id=message.from_user.id)
-    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-    if not is_subscriber:
-        await message.answer(
-            text="🦄",
-            reply_markup=reply_builder(["В главное меню"])
-        )
-
-        idempotence_key = str(uuid.uuid4())
-        payment = Payment.create(unicode_base_params, idempotence_key)
-
-        await message.answer(
-            text=unicode_base_info,
-            reply_markup=create_kb_to_payment(
-                url=payment.confirmation.confirmation_url,
-                payment_id=payment.id,
-                subscription_type="🟣 Unicode Base"
-            )
-        )
+    await callback.answer()
 
 
 @router.callback_query(F.data.startswith("check_payment_"))
-async def check_payment(callback: types.CallbackQuery, db: Database, bot: Bot) -> None:
+async def check_payment(callback: types.CallbackQuery, db: Database) -> None:
     payment_id = callback.data.split("_")[2]
     payment = Payment.find_one(payment_id)
     # ic(payment.json())
     if payment.status == "succeeded":
-        user_info = await db.get_subscriber(user_id=callback.from_user.id)
-        is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
+        try:
+            user_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
+            if user_info["subscription_db_name"] == payment.metadata["subscription_db_name"]:
+                subscription_end = user_info["subscription_end"] + timedelta(days=30)
+            else:
+                subscription_end = datetime.now() + timedelta(days=30)
+            subscriber_info = {
+                "tg_id": callback.from_user.id,
+                "subscription_db_name": payment.metadata["subscription_db_name"],
+                "subscription_start": datetime.now(),
+                "subscription_end": subscription_end,
+                "payment_method_id": payment.payment_method.id,
+                "is_subscribed_to_payments": True
+            }
 
-        await callback.message.delete()
+            await db.user_update(user_id=callback.from_user.id, **subscriber_info)
+
+            await callback.message.delete()
+            await callback.message.answer(
+                text=messages.successful_pay_subscr,
+                reply_markup=return_to_menu
+            )
+        except Exception as err:
+            await callback.message.answer(
+                text=messages.error_pay_subscr,
+                reply_markup=write_to_support_and_return_to_menu
+            )
+            ic(err)
+
+        formatting_subscription_name = ""
+        for subscr in [unicode_guest, unicode_base, unicode_starter]:
+            if payment.metadata["subscription_db_name"] == subscr.db_name:
+                formatting_subscription_name = f"{subscr.name} ({subscr.price} ₽/мес)"
+
         await callback.message.answer(
-            text="Оплата прошла успешно!",
-            reply_markup=reply_builder(["В главное меню"])
+            text=f"@{callback.from_user.username}, `{callback.from_user.full_name}` оформил подписку `{formatting_subscription_name}`",
         )
-        subscriber_info = {
-            "tg_id": callback.from_user.id,
-            "subscription_type": payment.metadata["subscription_type"],
-            "subscription_start": datetime.now(),
-            "subscription_end": datetime.now() + timedelta(days=30),
-            "payment_method_id": payment.payment_method.id,
-            "is_subscribed_to_payments": True
-        }
-
-        if not is_subscriber:
-            await db.new_subscriber(**subscriber_info)
-        else:
-            if (payment.metadata["subscription_type"] == user_info.subscription_type):
-                subscriber_info["subscription_end"] = user_info.subscription_end + timedelta(days=30)
-            await db.subscriber_update(user_id=callback.from_user.id, **subscriber_info)
-        await callback.message.answer(
-            text="✅ Подписка успешно активирована!\nДобро пожаловать в Unicode 💜!",
-            reply_markup=reply_builder(text=["В главное меню"])
-        )
-
-        if payment.metadata["subscription_type"] == "unicode_guest":
-            formatting_subscription_type = "👤 Unicode Guest (99 ₽/мес)"
-        elif payment.metadata["subscription_type"] == "unicode_base":
-            formatting_subscription_type = "🟣 Unicode Base (499 ₽/мес)"
-
-        await bot.send_message(
-            chat_id=os.getenv("FORWADING_CHAT"),
-            text=f"Пользователь @{callback.from_user.username}, `{callback.from_user.full_name}` оформил подписку `{formatting_subscription_type}`",
-        )
+        # TODO поставить отправку в админ чат
+        # await bot.send_message(
+            # chat_id=os.getenv("FORWADING_CHAT"),
+            # text=f"@{callback.from_user.username}, `{callback.from_user.full_name}` оформил подписку `{formatting_subscription_name}`",
+        # )
     elif payment.status == "canceled":
         await callback.message.delete()
         await callback.message.answer(
             text="🚫 Оплата отменена! Вы отменили платеж самостоятельно, истекло время на принятие платежа или платеж был отклонен ЮKassa или платежным провайдером.",
-            reply_markup=reply_builder(["В главное меню"])
+            reply_markup=write_to_support_and_return_to_menu
         )
     elif payment.status == "pending":
         await callback.answer(
             text="⏳ Платеж создан и ожидает действий от пользователя."
         )
     await callback.answer()
-
-
-@router.message(F.text == "Отменить подписку")
-async def unsubscribe(message: types.Message, db: Database, state: FSMContext) -> None:
-    user_info = await db.get_subscriber(user_id=message.from_user.id)
-    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-    if is_subscriber and user_info.is_subscribed_to_payments:
-        await message.answer(
-            text=cancel_subscription.format(
-                subscription_end=user_info.subscription_end.strftime("%d.%m.%Y %H:%M")
-            ),
-            reply_markup=reply_builder(["Да", "В главное меню"], sizes=[1, 1])
-        )
-        await state.set_state(Subscription.confirm_delete)
-    else:
-        await message.answer(
-            text="🚫 В данный момент у тебя нет активной подписки.",
-            reply_markup=reply_builder(["В главное меню"])
-        )
-
-
-@router.message(Subscription.confirm_delete, F.text == "Да")
-async def confirm_unsubscribe(message: types.Message, db: Database, state: FSMContext) -> None:
-    await state.clear()
-    await db.subscriber_update(user_id=message.from_user.id, is_subscribed_to_payments=False)
-    await message.answer(
-        text="✅ Твоя подписка успешно отменена!",
-        reply_markup=reply_builder(["В главное меню"])
-    )

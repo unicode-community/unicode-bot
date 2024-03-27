@@ -1,18 +1,31 @@
 from aiogram import F, Router, types
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from keyboards.reply import start_kb
-from messages import main_welcome
+from db.database import Database
+from keyboards.general import main_menu_kb
+from messages.general import main_welcome
 
 router = Router()
 
-@router.message(Command("menu"))
-@router.message(F.text.lower() == "в главное меню")
-@router.message(CommandStart())
-async def start_cmd(message: types.Message, state: FSMContext) -> None:
+
+@router.callback_query(F.data == "unicode_menu")
+async def callback_start_cmd(callback: types.CallbackQuery, state: FSMContext) -> None:
     await state.clear()
+    await callback.message.answer(
+        text=main_welcome,
+        reply_markup=main_menu_kb,
+    )
+    await callback.answer()
+
+
+@router.message(CommandStart())
+async def command_start_cmd(message: types.Message, state: FSMContext, db: Database) -> None:
+    await state.clear()
+    is_new_user = await db.is_new_user(tg_id=message.from_user.id)
+    if is_new_user:
+        await db.new_user(tg_id=message.from_user.id, tg_username=message.from_user.username)
     await message.answer(
         text=main_welcome,
-        reply_markup=start_kb,
+        reply_markup=main_menu_kb,
     )

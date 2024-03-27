@@ -7,6 +7,7 @@ from aiogram.types import BotCommand
 from dotenv import find_dotenv, load_dotenv
 
 import handlers
+from config.buttons import UnicodeButtons
 from db.database import Database
 
 load_dotenv(find_dotenv())
@@ -28,13 +29,14 @@ async def main() -> None:
         handlers.commands.router,
         handlers.subscribe.router,
         handlers.knowledge_base.router,
-        handlers.mentors_base.router,
+        handlers.mentors_table.router,
         handlers.community_chats.router,
         handlers.networking_bot.router,
+        handlers.support.router,
         handlers.admin.router
     )
 
-    await bot.set_my_commands(commands=[BotCommand(command="menu", description="⚙️ Главное меню")])
+    await bot.set_my_commands(commands=[BotCommand(command="start", description=UnicodeButtons.main_menu)])
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot, db=db)
 

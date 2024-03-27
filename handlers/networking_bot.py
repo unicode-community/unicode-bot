@@ -1,26 +1,31 @@
-from datetime import datetime
-
 from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
 
 from db.database import Database
-from keyboards.builders import reply_builder
-from keyboards.inline import redirect_networking_bot
-from messages import networkingbot_welcome
+from keyboards.general import subscribe_and_return_to_menu
+from keyboards.networking_bot import redirect_to_bot_and_return_to_menu
+from messages.networking_bot import add_for_unsubscribers, welcome_networking_bot
+from utils import get_subscription_status
 
 router = Router()
 
-@router.message(F.text == "Бот для IT-знакомств")
-async def networking_bot(message: types.Message, state: FSMContext, db: Database) -> None:
+@router.callback_query(F.data == "unicode_networking")
+async def networking_bot(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
     await state.clear()
-    user_info = await db.get_subscriber(user_id=message.from_user.id)
-    is_subscriber = (user_info is not None) and (user_info.subscription_start <= datetime.now() <= user_info.subscription_end)
-    buttons = ["В главное меню"] if is_subscriber else ["Оформить подписку", "В главное меню"]
-    await message.answer(
-        text="🦄",
-        reply_markup=reply_builder(text=buttons, sizes=[1, 1])
+    subscriber_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
+
+    access_to_networking_bot = (
+        (subscriber_info["subscription_db_name"] is not None)
+        and ("Доступ к боту для IT знакомств" in subscriber_info["subscription_features"])
     )
-    await message.answer(
-        text=networkingbot_welcome,
-        reply_markup=redirect_networking_bot
-    )
+    if access_to_networking_bot:
+        await callback.message.answer(
+            text=welcome_networking_bot,
+            reply_markup=redirect_to_bot_and_return_to_menu
+        )
+    else:
+        await callback.message.answer(
+            text=welcome_networking_bot + "\n" + add_for_unsubscribers,
+            reply_markup=subscribe_and_return_to_menu
+        )
+    await callback.answer()

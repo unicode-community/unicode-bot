@@ -1,6 +1,8 @@
 import os
+from datetime import datetime
 from typing import Optional
 
+import pytz
 from dotenv import load_dotenv
 from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.engine import URL
@@ -14,6 +16,7 @@ from sqlalchemy.ext.asyncio import (
 
 from .models import Base, Mentor, User
 
+# TODO перенести загрузку всех переменных окружения в один файл
 load_dotenv()
 postgres_url = URL.create(
     drivername="postgresql+asyncpg",
@@ -33,57 +36,46 @@ class Database:
             expire_on_commit=False
         )
 
+
     async def create(self) -> None:
+        """Создаем таблицы в базе данных"""
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-    async def new_subscriber(self, **kwargs) -> None:
-        async with self.async_session.begin() as session:
-            session.add(User(**kwargs))
 
-    async def new_mentor(self, **kwargs) -> None:
-        async with self.async_session.begin() as session:
-            session.add(Mentor(**kwargs))
-
-    async def unsubscribe_user(self, tg_id: int):
-        stmt = (
-            delete(User).
-            where(
-                User.tg_id == tg_id
-            )
-        )
-        async with self.async_session.begin() as session:
-            await session.execute(stmt)
-            await session.commit()
-
-    async def delete_mentor(self, tg_id: int):
-        stmt = (
-            delete(Mentor).
-            where(
-                Mentor.tg_id == tg_id
-            )
-        )
-        async with self.async_session.begin() as session:
-            await session.execute(stmt)
-            await session.commit()
-
-    async def get_subscriber(self, user_id: Optional[int]=None, all_data: bool=False) -> Optional[ScalarResult]:
+    async def get_user(self, user_id) -> Optional[ScalarResult]:
         stmt = (
             select(User).
             where(User.tg_id == user_id)
-        ) if user_id is not None else select(User)
+        )
 
         try:
             async with self.async_session.begin() as session:
                 data = await session.execute(stmt)
-                return data.scalars().one() if not all_data else data.scalars().all()
+                return data.scalars().one()
         except NoResultFound:
             return None
+
+    async def get_user_by_username(self, tg_username: str) -> Optional[ScalarResult]:
+        stmt = (
+            select(User).
+            where(User.tg_username == tg_username)
+        )
+
+        try:
+            async with self.async_session.begin() as session:
+                data = await session.execute(stmt)
+                return data.scalars().one()
+        except NoResultFound:
+            return None
+
 
     async def get_mentor(self, tg_id: int) -> Optional[ScalarResult]:
         stmt = (
             select(Mentor).
-            where(Mentor.tg_id == tg_id)
+            where(
+                Mentor.tg_id == tg_id,
+            )
         )
         try:
             async with self.async_session.begin() as session:
@@ -92,18 +84,8 @@ class Database:
         except NoResultFound:
             return None
 
-    async def mentor_update(self, user_id: int, **kwargs) -> None:
-        stmt = (
-            update(Mentor).
-            where(Mentor.tg_id == user_id).
-            values(**kwargs)
-        )
 
-        async with self.async_session.begin() as session:
-            await session.execute(stmt)
-
-
-    async def subscriber_update(self, user_id: int, **kwargs) -> None:
+    async def user_update(self, user_id: int, **kwargs) -> None:
         stmt = (
             update(User).
             where(User.tg_id == user_id).
@@ -112,3 +94,93 @@ class Database:
 
         async with self.async_session.begin() as session:
             await session.execute(stmt)
+
+
+    async def mentor_update(self, tg_id: int, **kwargs) -> None:
+        stmt = (
+            update(Mentor).
+            where(Mentor.tg_id == tg_id).
+            values(**kwargs)
+        )
+
+        async with self.async_session.begin() as session:
+            await session.execute(stmt)
+
+
+    async def is_new_user(self, tg_id: int) -> bool:
+        stmt = (
+            select(User).
+            where(User.tg_id == tg_id)
+        )
+        try:
+            async with self.async_session.begin() as session:
+                data = await session.execute(stmt)
+                data.scalars().one()
+                return False
+        except NoResultFound:
+            return True
+
+
+    async def new_user(self, **kwargs) -> None:
+        async with self.async_session.begin() as session:
+            session.add(User(**kwargs))
+
+    async def new_mentor(self, **kwargs) -> None:
+        async with self.async_session.begin() as session:
+            session.add(Mentor(**kwargs))
+
+    async def delete_mentor(self, tg_id: int) -> None:
+        stmt = (
+            delete(Mentor).
+            where(Mentor.tg_id == tg_id)
+        )
+        async with self.async_session.begin() as session:
+            await session.execute(stmt)
+
+
+    async def get_all_users(self):
+        stmt = select(User)
+        try:
+            async with self.async_session.begin() as session:
+                data = await session.execute(stmt)
+                return data.scalars().all()
+        except NoResultFound:
+            return []
+
+
+    async def get_all_mentors(self):
+        stmt = (select(Mentor).where(Mentor.airtable_record_id.isnot(None)))
+        try:
+            async with self.async_session.begin() as session:
+                data = await session.execute(stmt)
+                return data.scalars().all()
+        except NoResultFound:
+            return []
+
+
+    async def get_all_subscribers(self, subscription_db_name: Optional[str]=None):
+        if subscription_db_name is None:
+            stmt = (
+                select(User)
+                .where(
+                    User.subscription_db_name.isnot(None),
+                    User.subscription_start <= datetime.now(),
+                    User.subscription_end >= datetime.now()
+                )
+            )
+        else:
+            stmt = (
+                select(User)
+                .where(
+                    User.subscription_db_name == subscription_db_name,
+                    User.subscription_start <= datetime.now(),
+                    User.subscription_end >= datetime.now()
+                )
+            )
+
+        try:
+            async with self.async_session.begin() as session:
+                data = await session.execute(stmt)
+                return data.scalars().all()
+        except NoResultFound:
+            return []
