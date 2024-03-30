@@ -4,11 +4,13 @@ import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import find_dotenv, load_dotenv
 
 import handlers
 from config.buttons import UnicodeButtons
 from db.database import Database
+from utils import send_warnings_and_kicks
 
 load_dotenv(find_dotenv())
 ALLOWED_UPDATES = ["message", "edited_message"]
@@ -33,8 +35,13 @@ async def main() -> None:
         handlers.community_chats.router,
         handlers.networking_bot.router,
         handlers.support.router,
-        handlers.admin.router
+        handlers.admin.router,
+        handlers.private_channel.router,
     )
+
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(send_warnings_and_kicks, trigger="interval", hours=1, kwargs={"bot": bot, "db": db})
+    scheduler.start()
 
     await bot.set_my_commands(commands=[BotCommand(command="start", description=UnicodeButtons.main_menu)])
     await bot.delete_webhook(drop_pending_updates=True)

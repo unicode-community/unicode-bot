@@ -15,6 +15,7 @@ async def callback_start_cmd(callback: types.CallbackQuery, state: FSMContext) -
     await callback.message.answer(
         text=main_welcome,
         reply_markup=main_menu_kb,
+        disable_web_page_preview=True,
     )
     await callback.answer()
 
@@ -28,4 +29,5 @@ async def command_start_cmd(message: types.Message, state: FSMContext, db: Datab
     await message.answer(
         text=main_welcome,
         reply_markup=main_menu_kb,
+        disable_web_page_preview=True,
     )

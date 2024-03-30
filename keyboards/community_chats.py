@@ -28,6 +28,3 @@ subscribe_and_return_to_menu = InlineKeyboardMarkup(
         [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
     ]
 )
-
-
-

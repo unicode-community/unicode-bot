@@ -1,7 +1,5 @@
 from datetime import datetime
 
-import pytz
-
 from db.database import Database
 
 
@@ -27,16 +25,16 @@ class UnicodeStandard(UnicodeGuest):
     name = "🟠 Unicode Starter"
     db_name = "unicode_starter"
     price = 399
-    features = UnicodeGuest.features + ["Доступ к боту для IT знакомств"]
-    features_emoji = UnicodeGuest.features_emoji + ["🤝 Доступ к боту для IT знакомств"]
+    features = UnicodeGuest.features# + ["Доступ к боту для IT знакомств"] # TODO включить когда будет нужно
+    features_emoji = UnicodeGuest.features_emoji# + ["🤝 Доступ к боту для IT знакомств"] # TODO включить когда будет нужно
 
 
 class UnicodeBase(UnicodeStandard):
     name = "🟣 Unicode Base"
     db_name = "unicode_base"
     price = 499
-    features = UnicodeStandard.features + ["Доступ к базе знаний", "Доступ к размещению в таблице менторов"]
-    features_emoji = UnicodeStandard.features_emoji + ["📚 Доступ к базе знаний", "🏅 Доступ к размещению в таблице менторов"]
+    features = UnicodeStandard.features + ["Доступ в приватный телеграм канал", "Доступ к базе знаний", "Доступ к размещению в таблице менторов"]
+    features_emoji = UnicodeStandard.features_emoji + ["🟣 Доступ в приватный телеграм канал", "📚 Доступ к базе знаний", "🏅 Доступ к размещению в таблице менторов"]
 
 
 async def get_subscription_status(user_tg_id: int, db: Database) -> dict:

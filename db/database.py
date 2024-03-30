@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 from typing import Optional
 
-import pytz
 from dotenv import load_dotenv
 from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.engine import URL
@@ -184,3 +183,8 @@ class Database:
                 return data.scalars().all()
         except NoResultFound:
             return []
+
+
+async def get_db():
+    db = Database()
+    yield db

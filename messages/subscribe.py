@@ -2,7 +2,7 @@ from utils.subscriptions import unicode_base, unicode_guest, unicode_starter
 
 welcome_subscribe = """🌈 Пожалуйста, выбери тип подписки, который тебя интересует:"""
 
-for subscription in [unicode_guest, unicode_starter, unicode_base]:
+for subscription in [unicode_guest, unicode_base]: # TODO добавить unicode_starter
     welcome_subscribe += f"""\n\n*{subscription.name}* ({subscription.price} ₽/мес)\n""" + "• " + "\n• ".join(subscription.features)
 
 choice_type_subscr = """👉 *Выбери интересующий тебя вариант подписки*"""

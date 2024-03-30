@@ -6,7 +6,7 @@ choice_subscr_type_and_return_to_menu = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(text=SubscriptionsButtons.unicode_guest, callback_data="unicode_guest"),
-            InlineKeyboardButton(text=SubscriptionsButtons.unicode_starter, callback_data="unicode_starter")
+            # InlineKeyboardButton(text=SubscriptionsButtons.unicode_starter, callback_data="unicode_starter")
         ],
         [InlineKeyboardButton(text=SubscriptionsButtons.unicode_base, callback_data="unicode_base")],
         [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
@@ -17,7 +17,7 @@ choice_subscr_type_and_break_subscr_and_return_to_menu = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(text=SubscriptionsButtons.unicode_guest, callback_data="unicode_guest"),
-            InlineKeyboardButton(text=SubscriptionsButtons.unicode_starter, callback_data="unicode_starter")
+            # InlineKeyboardButton(text=SubscriptionsButtons.unicode_starter, callback_data="unicode_starter")
         ],
         [InlineKeyboardButton(text=SubscriptionsButtons.unicode_base, callback_data="unicode_base")],
         [InlineKeyboardButton(text=SubscriptionsButtons.break_subscr, callback_data="break_subscr")],

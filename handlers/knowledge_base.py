@@ -1,4 +1,6 @@
-from aiogram import F, Router, types
+import os
+
+from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 from dotenv import find_dotenv, load_dotenv
 
@@ -71,7 +73,7 @@ async def add_questions_position(message: types.Message, state: FSMContext) -> N
 
 
 @router.message(Question.info, F.text)
-async def add_questions_info(message: types.Message, state: FSMContext) -> None:
+async def add_questions_info(message: types.Message, state: FSMContext, bot: Bot) -> None:
     await state.update_data(info=message.text)
     await message.answer(
         text=messages.feedback_after_interview,
@@ -80,8 +82,8 @@ async def add_questions_info(message: types.Message, state: FSMContext) -> None:
 
     data = await state.get_data()
 
-    await message.answer( # TODO Заменить на отправку в чат админки
-        # chat_id=os.getenv("FORWADING_CHAT"),
+    await bot.send_message(
+        chat_id=os.getenv("FORWADING_CHAT"),
         text=f"@{message.from_user.username}, `{message.from_user.full_name}`\n\n"
          f"*1️⃣ Топик:* `Вопросы с собеседования`\n"
          f"*2️⃣ Позиция:* `{data['position']}`\n"
@@ -112,7 +114,7 @@ async def add_materials_descr(message: types.Message, state: FSMContext) -> None
 
 
 @router.message(Material.info, F.text)
-async def add_materials_info(message: types.Message, state: FSMContext) -> None:
+async def add_materials_info(message: types.Message, state: FSMContext, bot: Bot) -> None:
     await state.update_data(info=message.text)
 
     await message.answer(
@@ -122,8 +124,8 @@ async def add_materials_info(message: types.Message, state: FSMContext) -> None:
 
     data = await state.get_data()
 
-    await message.answer( # TODO Заменить на отправку в чат админки
-        # chat_id=os.getenv("FORWADING_CHAT"),
+    await bot.send_message(
+        chat_id=os.getenv("FORWADING_CHAT"),
         text=f"@{message.from_user.username}, `{message.from_user.full_name}`\n\n"
          f"*1️⃣ Топик:* `Полезные материалы`\n"
          f"*2️⃣ Описание:*\n```\n{data['descr']}```\n"
@@ -164,7 +166,7 @@ async def add_summary_company(message: types.Message, state: FSMContext) -> None
 
 
 @router.message(Interview.info, F.text)
-async def add_summary_info(message: types.Message, state: FSMContext) -> None:
+async def add_summary_info(message: types.Message, state: FSMContext, bot: Bot) -> None:
     await state.update_data(info=message.text)
 
     await message.answer(
@@ -174,8 +176,8 @@ async def add_summary_info(message: types.Message, state: FSMContext) -> None:
 
     data = await state.get_data()
 
-    await message.answer( # TODO Заменить на отправку в чат админки
-        # chat_id=os.getenv("FORWADING_CHAT"),
+    await bot.send_message(
+        chat_id=os.getenv("FORWADING_CHAT"),
         text=f"@{message.from_user.username}, `{message.from_user.full_name}`\n\n"
          f"*1️⃣ Топик:* `Резюме собеса`\n"
          f"*2️⃣ Позиция:* `{data['position']}`\n"

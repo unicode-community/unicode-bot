@@ -2,8 +2,7 @@ import os
 import uuid
 from datetime import datetime, timedelta
 
-import pytz
-from aiogram import F, Router, types
+from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 from dotenv import find_dotenv, load_dotenv
 from icecream import ic
@@ -161,7 +160,7 @@ async def confirm_break_subscr(callback: types.CallbackQuery, state: FSMContext,
 
 
 @router.callback_query(F.data.startswith("check_payment_"))
-async def check_payment(callback: types.CallbackQuery, db: Database) -> None:
+async def check_payment(callback: types.CallbackQuery, db: Database, bot: Bot) -> None:
     payment_id = callback.data.split("_")[2]
     payment = Payment.find_one(payment_id)
     # ic(payment.json())
@@ -199,15 +198,15 @@ async def check_payment(callback: types.CallbackQuery, db: Database) -> None:
         for subscr in [unicode_guest, unicode_base, unicode_starter]:
             if payment.metadata["subscription_db_name"] == subscr.db_name:
                 formatting_subscription_name = f"{subscr.name} ({subscr.price} ₽/мес)"
+                break
 
-        await callback.message.answer(
-            text=f"@{callback.from_user.username}, `{callback.from_user.full_name}` оформил подписку `{formatting_subscription_name}`",
-        )
-        # TODO поставить отправку в админ чат
-        # await bot.send_message(
-            # chat_id=os.getenv("FORWADING_CHAT"),
+        await bot.send_message(
+            chat_id=os.getenv("FORWADING_CHAT"),
             # text=f"@{callback.from_user.username}, `{callback.from_user.full_name}` оформил подписку `{formatting_subscription_name}`",
-        # )
+            text=f"У вас появился новый подписчик @{callback.from_user.username}, {callback.from_user.full_name}\n"
+            f"Уровень: «{subscr.name}»\n"
+            f"Цена: {subscr.price}",
+        )
     elif payment.status == "canceled":
         await callback.message.delete()
         await callback.message.answer(

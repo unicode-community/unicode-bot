@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-import pytz
 from aiogram import F, Router, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -77,7 +76,7 @@ async def send_message(message: types.Message, state: FSMContext, db: Database):
         text=f"Успешно отправлено `{count_success}` пользователям, не удалось отправить `{count_fail}`",
         reply_markup=return_to_menu
     )
-    await state.clear()
+    await state.set_state(Admin.segment)
 
 
 @router.callback_query(F.data == "admin_remove_subscription")
@@ -93,7 +92,7 @@ async def admin_give_or_remove_subscription(callback: types.CallbackQuery, state
 
 
 @router.message(Admin.find_user, F.text)
-async def admin_find_user(message: types.Message, state: FSMContext, db: Database):
+async def admin_find_user(message: types.Message, db: Database):
     if message.text.startswith("@"):
         username = message.text[1:]
     else:
