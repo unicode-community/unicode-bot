@@ -1,9 +1,11 @@
 import os
+import uuid
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 from dotenv import find_dotenv, load_dotenv
 from pyairtable import Api
+from yookassa import Payment
 
 from db.database import Database
 from keyboards.general import return_to_menu
@@ -11,11 +13,11 @@ from keyboards.mentors_table import (
     confirm_delete_and_return_to_menu,
     create_approve_or_reject_mentor_form,
     create_delete_mentor,
+    create_redirect_to_mentors_table_and_subscribe_and_return_to_menu,
     edit_and_delete_mentor_form_and_return_to_menu,
     fill_mentor_form_and_return_to_menu,
     free_price_and_return_to_menu,
     redirect_to_mentors_table_and_become_mentor_and_return_to_menu,
-    redirect_to_mentors_table_and_subscribe_and_return_to_menu,
 )
 from messages.general import not_text_message
 from messages.mentors_table import (
@@ -32,6 +34,7 @@ from messages.mentors_table import (
     welcome_mentors_table,
 )
 from utils import get_subscription_status
+from utils.payments import create_subscription_params
 from utils.states import Mentor
 
 load_dotenv(find_dotenv())
@@ -47,14 +50,12 @@ async def mentors_base(callback: types.CallbackQuery, state: FSMContext, db: Dat
 
     subscriber_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
 
-    access_to_become_mentor = (
-        (subscriber_info["subscription_db_name"] is not None)
-        and ("Доступ к размещению в таблице менторов" in subscriber_info["subscription_features"])
-    )
-
-    kb = redirect_to_mentors_table_and_subscribe_and_return_to_menu
-    if access_to_become_mentor:
+    if subscriber_info["is_subscriber"]:
         kb = redirect_to_mentors_table_and_become_mentor_and_return_to_menu
+    else:
+        idempotence_key = str(uuid.uuid4())
+        payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+        kb = create_redirect_to_mentors_table_and_subscribe_and_return_to_menu(url=payment.confirmation.confirmation_url, payment_id=payment.id)
 
     await callback.message.answer(
         text=welcome_mentors_table,
@@ -168,9 +169,7 @@ async def fill_mentor_contact(message: types.Message, state: FSMContext, bot: Bo
     await db.new_mentor(**mentor_form)
 
     await bot.send_message(
-        # TODO заменить на отправку в админ чат
-        # chat_id=os.getenv("FORWADING_CHAT"),
-        chat_id=message.from_user.id,
+        chat_id=os.getenv("FORWADING_CHAT"),
         text=f"@{message.from_user.username}, `{message.from_user.full_name}` заполнил анкету ментора:\n\n"
         f"*0️⃣ tg_id*: `{message.from_user.id}`\n"
         f"*1️⃣ Имя:* `{mentor_form['name']}`\n"

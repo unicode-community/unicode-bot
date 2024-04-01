@@ -6,7 +6,6 @@ class UnicodeButtons:
     mentors_table = "🏅 Таблица менторов"
     support = "👨🏼‍💻 Написать в поддержку"
     main_menu = "🏠 В главное меню"
-    private_channel = "🟣 Приватный телеграм канал"
 
 
 class AdditionalButtons:
@@ -15,7 +14,6 @@ class AdditionalButtons:
     redirect_to_networking_bot = "🤖 Перейти в бота"
     redirect_to_mentors_table = "🏅 Перейти в таблицу менторов"
     redirect_to_knowledge_base = "📚 Перейти в базу"
-    redirect_to_private_channel = "🟣 Перейти в приватный канал"
     become_mentor = "🙋‍♂️ Стать ментором"
     fill_mentor_form = "📝 Заполнить анкету ментора"
     edit_mentor_form = "🔄 Изменить анкету"
@@ -26,9 +24,6 @@ class AdditionalButtons:
 
 
 class SubscriptionsButtons:
-    unicode_guest = "👤 Unicode Guest"
-    unicode_starter = "🟠 Unicode Starter"
-    unicode_base = "🟣 Unicode Base"
     break_subscr = "❌ Отменить подписку"
     confirm_break_subscr = "❌ Да, отменить подписку"
     pay_subscr = "💵 Оплатить подписку"

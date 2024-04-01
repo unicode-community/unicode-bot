@@ -33,7 +33,7 @@ async def main() -> None:
         handlers.knowledge_base.router,
         handlers.mentors_table.router,
         handlers.community_chats.router,
-        handlers.networking_bot.router,
+        # handlers.networking_bot.router,
         handlers.support.router,
         handlers.admin.router,
         handlers.private_channel.router,

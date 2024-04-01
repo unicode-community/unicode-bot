@@ -16,7 +16,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
     tg_username: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    subscription_db_name: Mapped[str] = mapped_column(Text, nullable=True)
+    is_subscriber: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     subscription_start: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     subscription_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     is_subscribed_to_payments: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)

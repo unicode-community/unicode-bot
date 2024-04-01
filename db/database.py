@@ -157,25 +157,31 @@ class Database:
             return []
 
 
-    async def get_all_subscribers(self, subscription_db_name: Optional[str]=None):
-        if subscription_db_name is None:
-            stmt = (
-                select(User)
-                .where(
-                    User.subscription_db_name.isnot(None),
-                    User.subscription_start <= datetime.now(),
-                    User.subscription_end >= datetime.now()
-                )
+    async def get_all_unsubscribers(self):
+        stmt = (
+            select(User)
+            .where(
+                User.is_subscriber.is_(None),
             )
-        else:
-            stmt = (
-                select(User)
-                .where(
-                    User.subscription_db_name == subscription_db_name,
-                    User.subscription_start <= datetime.now(),
-                    User.subscription_end >= datetime.now()
-                )
+        )
+
+        try:
+            async with self.async_session.begin() as session:
+                data = await session.execute(stmt)
+                return data.scalars().all()
+        except NoResultFound:
+            return []
+
+
+    async def get_all_subscribers(self):
+        stmt = (
+            select(User)
+            .where(
+                User.is_subscriber.is_(True),
+                User.subscription_start <= datetime.now(),
+                User.subscription_end >= datetime.now()
             )
+        )
 
         try:
             async with self.async_session.begin() as session:

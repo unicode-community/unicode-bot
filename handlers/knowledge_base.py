@@ -1,14 +1,20 @@
 import os
+import uuid
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 from dotenv import find_dotenv, load_dotenv
+from yookassa import Payment
 
 import messages.knowledge_base as messages
 from db.database import Database
-from keyboards.general import return_to_menu, subscribe_and_return_to_menu
+from keyboards.general import return_to_menu
 from keyboards.knowledge_base import information_options, redirect_knowdledge_base_and_update_base_and_return_to_menu
+from keyboards.subscribe import (
+    create_kb_to_payment,
+)
 from messages.general import not_text_message
+from utils.payments import create_subscription_params
 from utils.states import Interview, Material, Other, Question
 from utils.subscriptions import get_subscription_status
 
@@ -21,20 +27,17 @@ router = Router()
 async def knowledge_base(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
     subscriber_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
 
-    access_to_knowledge_base = (
-        (subscriber_info["subscription_db_name"] is not None)
-        and ("Доступ к базе знаний" in subscriber_info["subscription_features"])
-    )
-
-    if access_to_knowledge_base:
+    if subscriber_info["is_subscriber"]:
         await callback.message.answer(
             text=messages.welcome_knowledge_base,
             reply_markup=redirect_knowdledge_base_and_update_base_and_return_to_menu
         )
     else:
+        idempotence_key = str(uuid.uuid4())
+        payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
         await callback.message.answer(
             text=messages.welcome_knowledge_base + "\n" + messages.add_for_unsubscribers,
-            reply_markup=subscribe_and_return_to_menu
+            reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id),
         )
 
 
@@ -199,7 +202,7 @@ async def add_other(callback: types.CallbackQuery, state: FSMContext) -> None:
 
 
 @router.message(Other.info, F.text)
-async def add_other_info(message: types.Message, state: FSMContext) -> None:
+async def add_other_info(message: types.Message, state: FSMContext, bot: Bot) -> None:
     await state.update_data(info=message.text)
 
     await message.answer(
@@ -209,8 +212,8 @@ async def add_other_info(message: types.Message, state: FSMContext) -> None:
 
     data = await state.get_data()
 
-    await message.answer( # TODO Заменить на отправку в чат админки
-        # chat_id=os.getenv("FORWADING_CHAT"),
+    await bot.send_message(
+        chat_id=os.getenv("FORWADING_CHAT"),
         text=f"@{message.from_user.username}, `{message.from_user.full_name}`\n\n"
          f"*1️⃣ Топик:* `Другое`\n"
          f"*2️⃣ Информация:*\n```\n{data['info']}```",

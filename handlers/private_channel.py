@@ -1,13 +1,18 @@
+import uuid
 from datetime import datetime, timedelta
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from yookassa import Payment
 
 from config.buttons import AdditionalButtons, UnicodeButtons
 from db.database import Database
-from keyboards.general import subscribe_and_return_to_menu
+from keyboards.subscribe import (
+    create_kb_to_payment,
+)
 from messages.private_channel import add_for_unsubscribers, private_channel_welcome
+from utils.payments import create_subscription_params
 from utils.subscriptions import get_subscription_status
 
 router = Router()

@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from config import AdditionalButtons, UnicodeButtons, UnicodeLinks
+from config import AdditionalButtons, SubscriptionsButtons, UnicodeButtons, UnicodeLinks
 
 redirect_to_mentors_table_and_become_mentor_and_return_to_menu = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -10,13 +10,18 @@ redirect_to_mentors_table_and_become_mentor_and_return_to_menu = InlineKeyboardM
     ]
 )
 
-redirect_to_mentors_table_and_subscribe_and_return_to_menu = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text=AdditionalButtons.redirect_to_mentors_table, url=UnicodeLinks.mentors_table)],
-        [InlineKeyboardButton(text=UnicodeButtons.subscribe, callback_data="unicode_subscribe")],
-        [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
-    ]
-)
+def create_redirect_to_mentors_table_and_subscribe_and_return_to_menu(
+    url: str,
+    payment_id: str,
+) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=AdditionalButtons.redirect_to_mentors_table, url=UnicodeLinks.mentors_table)],
+            [InlineKeyboardButton(text=SubscriptionsButtons.pay_subscr, url=url)],
+            [InlineKeyboardButton(text=SubscriptionsButtons.check_payment, callback_data=f"check_payment_{payment_id}")],
+            [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
+        ]
+    )
 
 fill_mentor_form_and_return_to_menu = InlineKeyboardMarkup(
     inline_keyboard=[

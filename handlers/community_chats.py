@@ -1,14 +1,18 @@
 import os
+import uuid
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
+from yookassa import Payment
 
 from db.database import Database
 from keyboards.community_chats import (
     accept_create_new_chat_and_return_to_menu,
     create_new_chat_and_return_to_menu,
     return_to_menu,
-    subscribe_and_return_to_menu,
+)
+from keyboards.subscribe import (
+    create_kb_to_payment,
 )
 from messages.chats_messages import (
     ask_new_chat_name,
@@ -18,6 +22,7 @@ from messages.chats_messages import (
     rules_to_create_new_chat,
 )
 from utils import get_subscription_status
+from utils.payments import create_subscription_params
 from utils.states import NewChat
 
 router = Router()
@@ -28,21 +33,19 @@ async def community_chats(callback: types.CallbackQuery, db: Database, state: FS
 
     subscriber_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
 
-    access_to_chats = (
-        (subscriber_info["subscription_db_name"] is not None)
-        and ("Доступ в основные чаты сообщества" in subscriber_info["subscription_features"])
-    )
-
-    if access_to_chats:
+    if subscriber_info["is_subscriber"]:
         await callback.message.answer(
             text=chats_for_subscriber,
             disable_web_page_preview=True,
             reply_markup=create_new_chat_and_return_to_menu
         )
     else:
+        idempotence_key = str(uuid.uuid4())
+        payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+
         await callback.message.answer(
             text=chats_for_unsubscriber,
-            reply_markup=subscribe_and_return_to_menu
+            reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id),
         )
     await callback.answer()
 

@@ -36,7 +36,7 @@ async def admin_send_messages(callback: types.CallbackQuery, state: FSMContext):
 async def get_segment(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(segment=callback.data.split("_", maxsplit=1)[1])
     await callback.message.answer(
-        text="Напиши сообщение, которое хочешь отправить",
+        text="Введи сообщение для рассылки",
         reply_markup=return_to_menu
     )
     await callback.answer()
@@ -47,18 +47,12 @@ async def get_segment(callback: types.CallbackQuery, state: FSMContext):
 async def send_message(message: types.Message, state: FSMContext, db: Database):
     segment = await state.get_data()
 
-    if segment["segment"] == "all_users":
-        users = await db.get_all_users()
-    elif segment["segment"] == "all_subscribers":
+    if segment["segment"] == "subscribers":
         users = await db.get_all_subscribers()
     elif segment["segment"] == "mentors":
         users = await db.get_all_mentors()
-    elif segment["segment"] == "unicode_guest":
-        users = await db.get_all_subscribers(subscription_db_name="unicode_guest")
-    elif segment["segment"] == "unicode_starter":
-        users = await db.get_all_subscribers(subscription_db_name="unicode_starter")
-    elif segment["segment"] == "unicode_base":
-        users = await db.get_all_subscribers(subscription_db_name="unicode_base")
+    elif segment["segment"] == "others":
+        users = await db.get_all_unsubscribers()
     else:
         users = []
 
@@ -83,7 +77,7 @@ async def send_message(message: types.Message, state: FSMContext, db: Database):
 @router.callback_query(F.data == "admin_give_subscription")
 async def admin_give_or_remove_subscription(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer(
-        text="Напиши юзернейм пользователя",
+        text="Введи @username пользователя кому выдать (отобрать) подписку",
         reply_markup=return_to_menu
     )
 
@@ -103,11 +97,11 @@ async def admin_find_user(message: types.Message, db: Database):
     if user_info:
         await message.answer(
             text=f"Пользователь найден."
-            f"\nЕсли хочешь выдать подписку, то выбери тип подписки. Она будет действовать 30 дней, начиная с этого момента"
+            f"\nЕсли хочешь выдать подписку, то она будет действовать 30 дней, начиная с этого момента"
             f"\nЕсли хочешь удалить подписку у пользователя, то подписка будет прервана с текущего момента" # TODO спросить как лучше сделать
             f"\n\nИнформация о пользователе:"
             f"\n0️⃣ *tg_id*: `{user_info.tg_id}`"
-            f"\n1️⃣ *Тип подписки*: `{user_info.subscription_db_name}`"
+            f"\n1️⃣ *Подписчик*: `{user_info.is_subscriber}`"
             f"\n2️⃣ *Дата начала подписки*: `{user_info.subscription_start}`"
             f"\n3️⃣ *Дата окончания подписки*: `{user_info.subscription_end}`"
             f"\n4️⃣ *Подписан на регулярные платежи*: `{user_info.is_subscribed_to_payments}`",
@@ -120,25 +114,32 @@ async def admin_find_user(message: types.Message, db: Database):
         )
 
 
-@router.callback_query(F.data.startswith("give_unicode_"))
+@router.callback_query(F.data.startswith("give_subscription_"))
 async def give_subscription(callback: types.CallbackQuery, state: FSMContext, db: Database):
     await state.clear()
 
-    subscr_type = "_".join(callback.data.split("_")[1:3])
     tg_id = int(callback.data.split("_")[-1])
 
     subscr_info = {
-        "subscription_db_name": subscr_type,
+        "is_subscriber": True,
         "subscription_start": datetime.now(),
         "subscription_end": datetime.now() + timedelta(days=30)
     }
 
-    await db.user_update(user_id=tg_id, **subscr_info)
+    try:
+        await db.user_update(user_id=tg_id, **subscr_info)
 
-    await callback.message.answer(
-        text="Подписка выдана",
-        reply_markup=return_to_menu
-    )
+        await callback.message.answer(
+            text="✅ Подписка успешно добавлена.",
+            reply_markup=return_to_menu
+        )
+    except Exception as err:
+        await callback.message.answer(
+            text="❌ Возникла ошибка, подписка не добавлена.",
+            reply_markup=return_to_menu
+        )
+
+        ic(err)
     await callback.answer()
 
 
@@ -161,7 +162,7 @@ async def confirm_remove_subscription(callback: types.CallbackQuery, state: FSMC
     tg_id = int(callback.data.split("_")[-1])
 
     subscr_info = {
-        "subscription_db_name": None,
+        "is_subscriber": None,
         "subscription_start": None,
         "subscription_end": None,
         "is_subscribed_to_payments": False

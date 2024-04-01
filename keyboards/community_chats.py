@@ -22,9 +22,3 @@ accept_create_new_chat_and_return_to_menu = InlineKeyboardMarkup(
     ]
 )
 
-subscribe_and_return_to_menu = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text=UnicodeButtons.subscribe, callback_data="unicode_subscribe")],
-        [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
-    ]
-)
