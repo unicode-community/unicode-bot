@@ -27,6 +27,7 @@ from utils.states import NewChat
 
 router = Router()
 
+
 @router.callback_query(F.data == "unicode_chats")
 async def community_chats(callback: types.CallbackQuery, db: Database, state: FSMContext) -> None:
     await state.clear()
@@ -41,7 +42,8 @@ async def community_chats(callback: types.CallbackQuery, db: Database, state: FS
         )
     else:
         idempotence_key = str(uuid.uuid4())
-        payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+        payment = Payment.create(create_subscription_params(price=499, user_id=callback.from_user.id),
+                                 idempotency_key=idempotence_key)
 
         await callback.message.answer(
             text=chats_for_unsubscriber,

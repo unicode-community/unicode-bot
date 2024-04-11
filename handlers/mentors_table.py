@@ -54,7 +54,7 @@ async def mentors_base(callback: types.CallbackQuery, state: FSMContext, db: Dat
         kb = redirect_to_mentors_table_and_become_mentor_and_return_to_menu
     else:
         idempotence_key = str(uuid.uuid4())
-        payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+        payment = Payment.create(create_subscription_params(price=499, user_id=callback.from_user.id), idempotency_key=idempotence_key)
         kb = create_redirect_to_mentors_table_and_subscribe_and_return_to_menu(url=payment.confirmation.confirmation_url, payment_id=payment.id)
 
     await callback.message.answer(
