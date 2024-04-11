@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -36,7 +37,7 @@ async def subscribe(callback: types.CallbackQuery, state: FSMContext, db: Databa
             txt += "\n\n" + messages.last_active_time_subscr.format(date=subscr_info["subscription_end"].strftime("%d.%m.%Y %H:%M"))
             txt += "\n\n" + messages.add_for_temp_subscr
             idempotence_key = str(uuid.uuid4())
-            payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+            payment = Payment.create(create_subscription_params(price=499, user_id=callback.from_user.id), idempotency_key=idempotence_key)
             await callback.message.answer(
                 text=txt,
                 reply_markup=keyboards.create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id)
@@ -52,7 +53,7 @@ async def subscribe(callback: types.CallbackQuery, state: FSMContext, db: Databa
     else:
         # СЦЕНАРИЙ, КОГДА У ЧЕЛА НЕТ ПОДПИСКИ
         idempotence_key = str(uuid.uuid4())
-        payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+        payment = Payment.create(create_subscription_params(price=499, user_id=callback.from_user.id), idempotency_key=idempotence_key)
         await callback.message.answer(
             text=messages.welcome_subscribe,
             reply_markup=keyboards.create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id),
@@ -120,7 +121,7 @@ async def check_payment(callback: types.CallbackQuery, db: Database, bot: Bot) -
             )
         except Exception as err:
             idempotence_key = str(uuid.uuid4())
-            payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+            payment = Payment.create(create_subscription_params(price=499, user_id=callback.from_user.id), idempotency_key=idempotence_key)
 
             await callback.message.answer(
                 text=messages.error_pay_subscr,
@@ -136,7 +137,7 @@ async def check_payment(callback: types.CallbackQuery, db: Database, bot: Bot) -
         )
     elif payment.status == "canceled":
         idempotence_key = str(uuid.uuid4())
-        payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+        payment = Payment.create(create_subscription_params(price=499, user_id=callback.from_user.id), idempotency_key=idempotence_key)
 
         await callback.message.delete()
         await callback.message.answer(

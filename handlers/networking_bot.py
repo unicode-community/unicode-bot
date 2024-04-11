@@ -27,7 +27,7 @@ async def networking_bot(callback: types.CallbackQuery, state: FSMContext, db: D
         )
     else:
         idempotence_key = str(uuid.uuid4())
-        payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+        payment = Payment.create(create_subscription_params(price=499, user_id=callback.from_user.id), idempotency_key=idempotence_key)
         await callback.message.answer(
             text=welcome_networking_bot + "\n" + add_for_unsubscribers,
             reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id),

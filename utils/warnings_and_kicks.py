@@ -26,7 +26,7 @@ async def send_warnings_and_kicks(bot: Bot, db: Database) -> None:
             )
             try:
                 idempotence_key = str(uuid.uuid4())
-                payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+                payment = Payment.create(create_subscription_params(price=499, user_id=user.tg_id), idempotency_key=idempotence_key)
                 await bot.send_message(
                     chat_id=user.tg_id,
                     text="☠️ Твоя подписка закончилась. Но ты всегда можешь оформить её снова 🌈",
@@ -38,7 +38,7 @@ async def send_warnings_and_kicks(bot: Bot, db: Database) -> None:
         elif (user.is_subscriber) and (user.send_warning is None) and ((datetime.now() + timedelta(days=1) > user.subscription_end)):
             try:
                 idempotence_key = str(uuid.uuid4())
-                payment = Payment.create(create_subscription_params(price=499), idempotency_key=idempotence_key)
+                payment = Payment.create(create_subscription_params(price=499, user_id=user.tg_id), idempotency_key=idempotence_key)
                 await bot.send_message(
                     chat_id=user.tg_id,
                     text="😰 Завтра срок твоей подписки истекает. Через *24 часа* ты потеряешь доступ ко всем сервисам сообщества Unicode.",

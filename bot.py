@@ -4,13 +4,15 @@ import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import find_dotenv, load_dotenv
 
 import handlers
 from config.buttons import UnicodeButtons
 from db.database import Database
-from utils import send_warnings_and_kicks
+from utils import send_warnings_and_kicks, process_auto_pay
 
 load_dotenv(find_dotenv())
 ALLOWED_UPDATES = ["message", "edited_message"]
@@ -38,9 +40,15 @@ async def main() -> None:
         handlers.admin.router,
         handlers.private_channel.router,
     )
-
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(send_warnings_and_kicks, trigger="interval", hours=1, kwargs={"bot": bot, "db": db})
+    jobstores = {
+        'default': SQLAlchemyJobStore(url='sqlite:///jobs.sqlite'),
+        'memory': MemoryJobStore()
+    }
+    scheduler = AsyncIOScheduler(jobstores=jobstores)
+    scheduler.add_job(send_warnings_and_kicks, trigger="interval", hours=1, kwargs={"bot": bot, "db": db},
+                      jobstore='memory')
+    scheduler.add_job(process_auto_pay, trigger="interval", seconds=10, kwargs={"bot": bot, "db": db},
+                      jobstore='memory')
     scheduler.start()
 
     await bot.set_my_commands(commands=[BotCommand(command="start", description=UnicodeButtons.main_menu)])
