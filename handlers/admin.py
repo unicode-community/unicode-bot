@@ -94,7 +94,7 @@ async def admin_find_user(message: types.Message, db: Database):
                 tg_id=user_id,
                 is_subscriber=user_info["is_subscriber"],
                 subscription_start=user_info["subscription_start"],
-                subscription_end=user_info["subscription_end"],
+                subscription_end=user_info["subscription_end"].strftime("%d.%m.%Y %H:%M"),
                 is_subscribed_to_payments=user_info["is_subscribed_to_payments"],
             ),
             reply_markup=kb.give_or_delete_subscription(tg_id=user_id),

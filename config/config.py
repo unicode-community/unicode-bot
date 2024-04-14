@@ -12,7 +12,7 @@ class Config(BaseModel):
     general_chats: Dict[str, str]
     additional_chats: Dict[str, str]
     folder_with_chats: str
-
+    unicode_chat_ids: List[int]
 
 with open("config.yaml") as cfg_file:
     data = yaml.safe_load(cfg_file)

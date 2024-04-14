@@ -8,12 +8,11 @@ from yookassa import Payment
 
 import keyboards.mentors_table as kb
 import messages.mentors_table as msg
-from config.config import Config
-from db.database import Database
-from keyboards.general import return_to_menu
-from messages.general import not_text_message
-from utils import create_subscription_params, get_subscription_status
-from utils.states import Mentor
+from config import Config
+from db import Database
+from keyboards import return_to_menu
+from messages import not_text_message
+from utils import Mentor, create_subscription_params, get_subscription_status
 
 router = Router()
 
@@ -30,10 +29,9 @@ async def mentors_base(callback: types.CallbackQuery, state: FSMContext, db: Dat
     if subscriber_info["is_subscriber"]:
         main_mentor_kb = kb.redirect_to_mentors_table_and_become_mentor_and_return_to_menu
     else:
-        idempotence_key = str(uuid.uuid4())
         payment = Payment.create(
             create_subscription_params(price=cfg.subscription_price, user_id=callback.from_user.id),
-            idempotency_key=idempotence_key,
+            idempotency_key=str(uuid.uuid4()),
         )
         main_mentor_kb = kb.create_redirect_to_mentors_table_and_subscribe_and_return_to_menu(
             url=payment.confirmation.confirmation_url, payment_id=payment.id
@@ -126,13 +124,16 @@ async def fill_mentor_contact(message: types.Message, state: FSMContext, bot: Bo
 
     await bot.send_message(
         chat_id=os.getenv("FORWADING_CHAT"),
-        text=f"@{message.from_user.username}, `{message.from_user.full_name}` заполнил анкету ментора:\n\n"
-        f"*0️⃣ tg_id*: `{message.from_user.id}`\n"
-        f"*1️⃣ Имя:* `{mentor_form['name']}`\n"
-        f"*2️⃣ Направление:* `{mentor_form['direction']}`\n"
-        f"*3️⃣ Описание:* ```\n{mentor_form['descr']}```\n"
-        f"*4️⃣ Цена:* `{mentor_form['price']}`\n"
-        f"*5️⃣ Контакт:* `{mentor_form['contact']}`",
+        text=msg.message_for_admins.format(
+            username=message.from_user.username,
+            full_name=message.from_user.full_name,
+            tg_id=message.from_user.id,
+            name=mentor_form["name"],
+            direction=mentor_form["direction"],
+            descr=mentor_form["descr"],
+            price=mentor_form["price"],
+            contact=mentor_form["contact"],
+        ),
         disable_web_page_preview=True,
         reply_markup=kb.create_approve_or_reject_mentor_form(tg_id=message.from_user.id),
         parse_mode="Markdown",

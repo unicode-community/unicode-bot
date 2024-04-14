@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 
-import yaml
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from apscheduler.jobstores.memory import MemoryJobStore
@@ -54,7 +53,7 @@ async def main() -> None:
 
     await bot.set_my_commands(commands=[BotCommand(command="start", description=UnicodeButtons.main_menu)])
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot, db=db, cfg=cfg)
+    await dp.start_polling(bot, db=db, cfg=cfg, scheduler=scheduler)
 
 
 if __name__ == "__main__":

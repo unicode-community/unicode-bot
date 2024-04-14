@@ -22,16 +22,12 @@ async def get_subscription_status(user_tg_id: int, db: Database) -> dict:
 
         is_subscribed_to_payments = is_subscriber and user_info.is_subscribed_to_payments
         if is_subscriber and user_info.subscription_start:
-            subscription_start = user_info.subscription_start.astimezone(timezone("Europe/Moscow")).strftime(
-                "%d.%m.%Y %H:%M"
-            )
+            subscription_start = user_info.subscription_start.astimezone(timezone("Europe/Moscow"))
         else:
             subscription_start = None
 
         if is_subscriber and user_info.subscription_end:
-            subscription_end = user_info.subscription_end.astimezone(timezone("Europe/Moscow")).strftime(
-                "%d.%m.%Y %H:%M"
-            )
+            subscription_end = user_info.subscription_end.astimezone(timezone("Europe/Moscow"))
         else:
             subscription_end = None
 
