@@ -17,14 +17,6 @@ confirm_break_subscr_and_return_to_menu = InlineKeyboardMarkup(
     ]
 )
 
-
-check_payment_and_return_to_menu = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text=SubscriptionsButtons.check_payment, callback_data="check_payment")],
-        [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
-    ]
-)
-
 pay_subscr_and_write_to_support_and_return_to_menu = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text=SubscriptionsButtons.pay_subscr, callback_data="pay_subscr")],
@@ -41,7 +33,6 @@ def create_kb_to_payment(
 ) -> InlineKeyboardMarkup:
     payment_kb = []
     payment_kb.append([InlineKeyboardButton(text=SubscriptionsButtons.pay_subscr, url=url)])
-    payment_kb.append([InlineKeyboardButton(text=SubscriptionsButtons.check_payment, callback_data=f"check_payment_{payment_id}")])
     if add_write_support:
         payment_kb.append([InlineKeyboardButton(text=UnicodeButtons.support, callback_data="unicode_support")])
     payment_kb.append([InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")])

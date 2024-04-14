@@ -18,7 +18,6 @@ def create_redirect_to_mentors_table_and_subscribe_and_return_to_menu(
         inline_keyboard=[
             [InlineKeyboardButton(text=AdditionalButtons.redirect_to_mentors_table, url=UnicodeLinks.mentors_table)],
             [InlineKeyboardButton(text=SubscriptionsButtons.pay_subscr, url=url)],
-            [InlineKeyboardButton(text=SubscriptionsButtons.check_payment, callback_data=f"check_payment_{payment_id}")],
             [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
         ]
     )

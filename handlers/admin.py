@@ -4,6 +4,7 @@ from aiogram import F, Router, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from icecream import ic
+from pytz import timezone
 
 import keyboards.admin as keyboards
 from db.database import Database
@@ -87,10 +88,7 @@ async def admin_give_or_remove_subscription(callback: types.CallbackQuery, state
 
 @router.message(Admin.find_user, F.text)
 async def admin_find_user(message: types.Message, db: Database):
-    if message.text.startswith("@"):
-        username = message.text[1:]
-    else:
-        username = message.text
+    username = message.text[1:] if message.text.startswith("@") else message.text
 
     user_info = await db.get_user_by_username(tg_username=username)
 
@@ -98,12 +96,12 @@ async def admin_find_user(message: types.Message, db: Database):
         await message.answer(
             text=f"Пользователь найден."
             f"\nЕсли хочешь выдать подписку, то она будет действовать 30 дней, начиная с этого момента"
-            f"\nЕсли хочешь удалить подписку у пользователя, то подписка будет прервана с текущего момента" # TODO спросить как лучше сделать
+            f"\nЕсли хочешь удалить подписку у пользователя, то подписка будет прервана с текущего момента"
             f"\n\nИнформация о пользователе:"
             f"\n0️⃣ *tg_id*: `{user_info.tg_id}`"
             f"\n1️⃣ *Подписчик*: `{user_info.is_subscriber}`"
-            f"\n2️⃣ *Дата начала подписки*: `{user_info.subscription_start}`"
-            f"\n3️⃣ *Дата окончания подписки*: `{user_info.subscription_end}`"
+            f"\n2️⃣ *Дата начала подписки*: `{user_info.subscription_start.astimezone('Europe/Moscow').strftime('%d.%m.%Y %H:%M')}`"
+            f"\n3️⃣ *Дата окончания подписки*: `{user_info.subscription_end.astimezone('Europe/Moscow').strftime('%d.%m.%Y %H:%M')}`"
             f"\n4️⃣ *Подписан на регулярные платежи*: `{user_info.is_subscribed_to_payments}`",
             reply_markup=keyboards.give_or_delete_subscription(tg_id=user_info.tg_id),
         )
@@ -122,8 +120,8 @@ async def give_subscription(callback: types.CallbackQuery, state: FSMContext, db
 
     subscr_info = {
         "is_subscriber": True,
-        "subscription_start": datetime.now(),
-        "subscription_end": datetime.now() + timedelta(days=30)
+        "subscription_start": datetime.now(tz=timezone("Europe/Moscow")),
+        "subscription_end": datetime.now(tz=timezone("Europe/Moscow")) + timedelta(days=30)
     }
 
     try:

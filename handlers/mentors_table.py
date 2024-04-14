@@ -3,19 +3,18 @@ import uuid
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
-from dotenv import find_dotenv, load_dotenv
 from pyairtable import Api
 from yookassa import Payment
 
 import keyboards.mentors_table as kb
 import messages.mentors_table as msg
+from config.cfg import Config
 from db.database import Database
 from keyboards.general import return_to_menu
 from messages.general import not_text_message
 from utils import create_subscription_params, get_subscription_status
 from utils.states import Mentor
 
-load_dotenv(find_dotenv())
 router = Router()
 
 api = Api(os.getenv("AIRTABLE_TOKEN"))
@@ -23,7 +22,7 @@ table = api.table(os.getenv("AIRTABLE_BASE_ID"), os.getenv("AIRTABLE_TABLE_ID"))
 
 
 @router.callback_query(F.data == "unicode_mentors_table")
-async def mentors_base(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
+async def mentors_base(callback: types.CallbackQuery, state: FSMContext, db: Database, cfg: Config) -> None:
     await state.clear()
 
     subscriber_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
@@ -33,7 +32,7 @@ async def mentors_base(callback: types.CallbackQuery, state: FSMContext, db: Dat
     else:
         idempotence_key = str(uuid.uuid4())
         payment = Payment.create(
-            create_subscription_params(price=os.getenv("SUBSCRIPTION_PRICE"), user_id=callback.from_user.id),
+            create_subscription_params(price=cfg.subscription_price, user_id=callback.from_user.id),
             idempotency_key=idempotence_key,
         )
         main_mentor_kb = kb.create_redirect_to_mentors_table_and_subscribe_and_return_to_menu(

@@ -3,6 +3,7 @@ import os
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 
+from config.cfg import Config
 from keyboards.general import return_to_menu
 from utils.states import Support
 
@@ -19,14 +20,14 @@ async def support(callback: types.CallbackQuery, state: FSMContext) -> None:
 
 
 @router.message(Support.message, F.text)
-async def support_message(message: types.Message, bot: Bot, state: FSMContext) -> None:
+async def support_message(message: types.Message, bot: Bot, state: FSMContext, cfg: Config) -> None:
     await message.answer(
         text="""💌 Твоё обращение принято! С тобой свяжется модератор, спасибо за доверие к сообществу Unicode! 💜""",
         reply_markup=return_to_menu
     )
 
     await bot.send_message(
-        chat_id=os.getenv("FORWADING_CHAT"),
+        chat_id=cfg.forwarding_chat,
         text=f"@{message.from_user.username}, `{message.from_user.full_name}` обратился в поддержку с сообщением:\n```\n{message.text}```",
     )
 

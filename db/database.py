@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
-from dotenv import load_dotenv
+from pytz import timezone
 from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import NoResultFound
@@ -15,8 +15,6 @@ from sqlalchemy.ext.asyncio import (
 
 from .models import Base, Mentor, User
 
-# TODO перенести загрузку всех переменных окружения в один файл
-load_dotenv()
 postgres_url = URL.create(
     drivername="postgresql+asyncpg",
     username=os.getenv("POSTGRES_USER"),
@@ -178,8 +176,8 @@ class Database:
             select(User)
             .where(
                 User.is_subscriber.is_(True),
-                User.subscription_start <= datetime.now(),
-                User.subscription_end >= datetime.now()
+                User.subscription_start <= datetime.now(tz=timezone("Europe/Moscow")),
+                User.subscription_end >= datetime.now(tz=timezone("Europe/Moscow"))
             )
         )
 

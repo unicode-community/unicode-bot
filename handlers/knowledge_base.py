@@ -3,25 +3,22 @@ import uuid
 
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
-from dotenv import find_dotenv, load_dotenv
 from yookassa import Payment
 
 import keyboards.knowledge_base as kb
 import messages.knowledge_base as msg
+from config.cfg import Config
 from db.database import Database
-from keyboards.general import return_to_menu
-from keyboards.subscribe import create_kb_to_payment
+from keyboards import create_kb_to_payment, return_to_menu
 from messages import not_text_message
 from utils import create_subscription_params, get_subscription_status
 from utils.states import Interview, Material, Other, Question
-
-load_dotenv(find_dotenv())
 
 router = Router()
 
 
 @router.callback_query(F.data == "unicode_knowledge_base")
-async def knowledge_base(callback: types.CallbackQuery, state: FSMContext, db: Database) -> None:
+async def knowledge_base(callback: types.CallbackQuery, state: FSMContext, db: Database, cfg: Config) -> None:
     subscriber_info = await get_subscription_status(user_tg_id=callback.from_user.id, db=db)
 
     if subscriber_info["is_subscriber"]:
@@ -30,10 +27,9 @@ async def knowledge_base(callback: types.CallbackQuery, state: FSMContext, db: D
             reply_markup=kb.redirect_knowledge_base_and_update_base_and_return_to_menu,
         )
     else:
-        idempotence_key = str(uuid.uuid4())
         payment = Payment.create(
-            create_subscription_params(price=os.getenv("SUBSCRIPTION_PRICE"), user_id=callback.from_user.id),
-            idempotency_key=idempotence_key,
+            create_subscription_params(price=cfg.subscription_price, return_url=cfg.bot_link, user_id=callback.from_user.id),
+            idempotency_key=str(uuid.uuid4()),
         )
         await callback.message.answer(
             text=msg.welcome_knowledge_base + "\n" + msg.add_for_unsubscribers,
@@ -66,14 +62,14 @@ async def add_questions_position(message: types.Message, state: FSMContext) -> N
 
 
 @router.message(Question.info, F.text)
-async def add_questions_info(message: types.Message, state: FSMContext, bot: Bot) -> None:
+async def add_questions_info(message: types.Message, state: FSMContext, bot: Bot, cfg: Config) -> None:
     await state.update_data(info=message.text)
     await message.answer(text=msg.feedback_after_interview, reply_markup=return_to_menu)
 
     data = await state.get_data()
 
     await bot.send_message(
-        chat_id=os.getenv("FORWADING_CHAT"),
+        chat_id=cfg.forwarding_chat,
         text=f"@{message.from_user.username}, `{message.from_user.full_name}`\n\n"
         f"*1️⃣ Топик:* `Вопросы с собеседования`\n"
         f"*2️⃣ Позиция:* `{data['position']}`\n"
@@ -98,7 +94,7 @@ async def add_materials_descr(message: types.Message, state: FSMContext) -> None
 
 
 @router.message(Material.info, F.text)
-async def add_materials_info(message: types.Message, state: FSMContext, bot: Bot) -> None:
+async def add_materials_info(message: types.Message, state: FSMContext, bot: Bot, cfg: Config) -> None:
     await state.update_data(info=message.text)
 
     await message.answer(text=msg.feedback_after_materials, reply_markup=return_to_menu)
@@ -106,7 +102,7 @@ async def add_materials_info(message: types.Message, state: FSMContext, bot: Bot
     data = await state.get_data()
 
     await bot.send_message(
-        chat_id=os.getenv("FORWADING_CHAT"),
+        chat_id=cfg.forwarding_chat,
         text=f"@{message.from_user.username}, `{message.from_user.full_name}`\n\n"
         f"*1️⃣ Топик:* `Полезные материалы`\n"
         f"*2️⃣ Описание:*\n```\n{data['descr']}```\n"
@@ -138,7 +134,7 @@ async def add_summary_company(message: types.Message, state: FSMContext) -> None
 
 
 @router.message(Interview.info, F.text)
-async def add_summary_info(message: types.Message, state: FSMContext, bot: Bot) -> None:
+async def add_summary_info(message: types.Message, state: FSMContext, bot: Bot, cfg: Config) -> None:
     await state.update_data(info=message.text)
 
     await message.answer(text=msg.feedback_after_summary, reply_markup=return_to_menu)
@@ -146,7 +142,7 @@ async def add_summary_info(message: types.Message, state: FSMContext, bot: Bot) 
     data = await state.get_data()
 
     await bot.send_message(
-        chat_id=os.getenv("FORWADING_CHAT"),
+        chat_id=cfg.forwarding_chat,
         text=f"@{message.from_user.username}, `{message.from_user.full_name}`\n\n"
         f"*1️⃣ Топик:* `Резюме собеса`\n"
         f"*2️⃣ Позиция:* `{data['position']}`\n"
@@ -165,7 +161,7 @@ async def add_other(callback: types.CallbackQuery, state: FSMContext) -> None:
 
 
 @router.message(Other.info, F.text)
-async def add_other_info(message: types.Message, state: FSMContext, bot: Bot) -> None:
+async def add_other_info(message: types.Message, state: FSMContext, bot: Bot, cfg: Config) -> None:
     await state.update_data(info=message.text)
 
     await message.answer(text=msg.feedback_after_other, reply_markup=return_to_menu)
@@ -173,7 +169,7 @@ async def add_other_info(message: types.Message, state: FSMContext, bot: Bot) ->
     data = await state.get_data()
 
     await bot.send_message(
-        chat_id=os.getenv("FORWADING_CHAT"),
+        chat_id=cfg.forwarding_chat,
         text=f"@{message.from_user.username}, `{message.from_user.full_name}`\n\n"
         f"*1️⃣ Топик:* `Другое`\n"
         f"*2️⃣ Информация:*\n```\n{data['info']}```",
