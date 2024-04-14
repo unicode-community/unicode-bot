@@ -5,7 +5,7 @@ from aiogram import Bot
 from pytz import timezone
 from yookassa import Payment
 
-from config.cfg import Config
+from config.config import Config
 from db.database import Database
 from keyboards.subscribe import create_kb_to_payment
 from utils.payments import create_subscription_params

@@ -1,3 +1,4 @@
-__all__ = ["database", "models"]
+__all__ = ["Database", "User", "Mentor"]
 
-from . import database, models
+from .database import Database
+from .models import Mentor, User

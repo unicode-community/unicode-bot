@@ -9,7 +9,7 @@ from pytz import timezone
 from yookassa import Configuration, Payment
 
 import keyboards.subscribe as keyboards
-from config.cfg import Config
+from config.config import Config
 from db.database import Database
 from keyboards.general import return_to_menu
 from messages import subscribe as messages

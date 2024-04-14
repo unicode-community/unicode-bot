@@ -4,7 +4,7 @@ from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
 from yookassa import Payment
 
-from config.cfg import Config
+from config.config import Config
 from db.database import Database
 from keyboards.networking_bot import redirect_to_bot_and_return_to_menu
 from keyboards.subscribe import create_kb_to_payment

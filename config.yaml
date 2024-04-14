@@ -5,3 +5,11 @@ admins_ids:
   - 766828537 # Никита
 subscription_price: 399
 bot_link: https://t.me/unicode_dev_bot
+general_chats:
+  "UNI: ОСНОВНОЙ": "https://t.me/+Pphu6iu6VGwwYmRi"
+additional_chats:
+  "UNI: резюме": "https://t.me/+vLW1bN_CDE5iZWM6"
+  "UNI: python": "https://t.me/+3iec-KVDof4wZGIy"
+  "UNI: data science": "https://t.me/+-yVI9LU9klk2ZjJi"
+  "UNI: база знаний": "https://t.me/+UWs3Kbqu6uUzNWZi"
+folder_with_chats: https://t.me/addlist/l69T0iycJCMwMTZi

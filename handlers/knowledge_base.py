@@ -1,4 +1,3 @@
-import os
 import uuid
 
 from aiogram import Bot, F, Router, types
@@ -7,12 +6,11 @@ from yookassa import Payment
 
 import keyboards.knowledge_base as kb
 import messages.knowledge_base as msg
-from config.cfg import Config
-from db.database import Database
+from config import Config
+from db import Database
 from keyboards import create_kb_to_payment, return_to_menu
 from messages import not_text_message
-from utils import create_subscription_params, get_subscription_status
-from utils.states import Interview, Material, Other, Question
+from utils import Interview, Material, Other, Question, create_subscription_params, get_subscription_status
 
 router = Router()
 
@@ -28,7 +26,9 @@ async def knowledge_base(callback: types.CallbackQuery, state: FSMContext, db: D
         )
     else:
         payment = Payment.create(
-            create_subscription_params(price=cfg.subscription_price, return_url=cfg.bot_link, user_id=callback.from_user.id),
+            create_subscription_params(
+                price=cfg.subscription_price, return_url=cfg.bot_link, user_id=callback.from_user.id
+            ),
             idempotency_key=str(uuid.uuid4()),
         )
         await callback.message.answer(

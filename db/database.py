@@ -53,9 +53,9 @@ class Database:
         except NoResultFound:
             return None
 
-    async def get_user_by_username(self, tg_username: str) -> Optional[ScalarResult]:
+    async def get_user_id_by_username(self, tg_username: str) -> Optional[ScalarResult]:
         stmt = (
-            select(User).
+            select(User.tg_id).
             where(User.tg_username == tg_username)
         )
 

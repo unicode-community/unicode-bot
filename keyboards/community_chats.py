@@ -2,11 +2,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from config import AdditionalButtons, UnicodeButtons
 
-return_to_menu = InlineKeyboardMarkup(
-    inline_keyboard=[[InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")]]
-)
-
-
 create_new_chat_and_return_to_menu = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text=AdditionalButtons.create_new_chat, callback_data="create_new_chat")],
@@ -21,4 +16,3 @@ accept_create_new_chat_and_return_to_menu = InlineKeyboardMarkup(
         [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
     ]
 )
-

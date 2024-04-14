@@ -2,9 +2,9 @@ from aiogram import F, Router, types
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from db.database import Database
-from keyboards.general import main_menu_kb
-from messages.general import main_welcome
+from db import Database
+from keyboards import main_menu_kb
+from messages import main_welcome
 
 router = Router()
 

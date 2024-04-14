@@ -12,7 +12,7 @@ from dotenv import find_dotenv, load_dotenv
 
 import handlers
 from config.buttons import UnicodeButtons
-from config.cfg import Config
+from config.config import cfg
 from db.database import Database
 from utils import process_auto_pay, send_warnings_and_kicks
 
@@ -21,11 +21,6 @@ ALLOWED_UPDATES = ["message", "edited_message"]
 
 async def main() -> None:
     load_dotenv(find_dotenv(filename=".env"))
-    with open("config.yaml") as cfg_file:
-        data = yaml.safe_load(cfg_file)
-
-    cfg = Config(**data)
-
     bot = Bot(token=os.getenv("BOT_TOKEN"), parse_mode="Markdown")
     bot.admins_list = cfg.admins_ids
     dp = Dispatcher()

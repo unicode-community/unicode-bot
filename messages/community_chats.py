@@ -1,23 +1,10 @@
-# В этот словарь можно добавлять новые чаты
-# TODO сделать этот словарь в виде конфига и тут его прочитывать
+from config.config import cfg
 
-general_chats = {
-    "UNI: ОСНОВНОЙ": "https://t.me/+Pphu6iu6VGwwYmRi",
-}
+general_chat_names_without_links = "• " + "\n• ".join(cfg.general_chats.keys())
+general_chat_names_with_links = "• " + "\n• ".join([f"[{name}]({link})" for name, link in cfg.general_chats.items()])
 
-additional_chats = {
-    "UNI: резюме": "https://t.me/+vLW1bN_CDE5iZWM6",
-    "UNI: python": "https://t.me/+3iec-KVDof4wZGIy",
-    "UNI: data science": "https://t.me/+-yVI9LU9klk2ZjJi",
-    "UNI: база знаний": "https://t.me/+UWs3Kbqu6uUzNWZi"
-}
-
-
-general_chat_names_without_links = "• " + "\n• ".join(general_chats.keys())
-general_chat_names_with_links = "• " + "\n• ".join([f"[{name}]({link})" for name, link in general_chats.items()])
-
-additional_chat_names_without_links = "• " + "\n• ".join(additional_chats.keys())
-additional_chat_names_with_links = "• " + "\n• ".join([f"[{name}]({link})" for name, link in additional_chats.items()])
+additional_chat_names_without_links = "• " + "\n• ".join(cfg.additional_chats.keys())
+additional_chat_names_with_links = "• " + "\n• ".join([f"[{name}]({link})" for name, link in cfg.additional_chats.items()])
 
 chats_for_subscriber = f"""
 💬 *Основной чат:*
@@ -28,7 +15,7 @@ chats_for_subscriber = f"""
 
 {additional_chat_names_with_links}
 
-🗂 *Ты можешь добавить все чаты сразу,* [одной папкой](https://t.me/addlist/l69T0iycJCMwMTZi).
+🗂 *Ты можешь добавить все чаты сразу,* [одной папкой]({cfg.folder_with_chats}).
 """
 
 chats_for_unsubscriber = f"""
@@ -59,3 +46,5 @@ rules_to_create_new_chat = """
 ask_new_chat_name = """🤔 Какую тему для чата ты хочешь предложить?"""
 
 feedback_after_create_new_chat = """👍 Отлично! Модератор рассмотрит твоё предложение и скоро с тобой свяжется."""
+
+message_for_admins = "@{username}, `{full_name}` предложил идею для нового чата:\n```\n{info}```"

@@ -8,7 +8,7 @@ from yookassa import Payment
 
 import keyboards.mentors_table as kb
 import messages.mentors_table as msg
-from config.cfg import Config
+from config.config import Config
 from db.database import Database
 from keyboards.general import return_to_menu
 from messages.general import not_text_message
