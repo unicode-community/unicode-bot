@@ -7,7 +7,7 @@ main_menu_kb = InlineKeyboardMarkup(
         [InlineKeyboardButton(text=UnicodeButtons.subscribe, callback_data="unicode_subscribe")],
         [InlineKeyboardButton(text=UnicodeButtons.chats, callback_data="unicode_chats")],
         # [InlineKeyboardButton(text=UnicodeButtons.networking_bot, callback_data="unicode_networking")], # TODO включить когда будет нужно
-        [InlineKeyboardButton(text=UnicodeButtons.knowdledge_base, callback_data="unicode_knowdledge_base")],
+        [InlineKeyboardButton(text=UnicodeButtons.knowledge_base, callback_data="unicode_knowledge_base")],
         [InlineKeyboardButton(text=UnicodeButtons.mentors_table, callback_data="unicode_mentors_table")],
         [InlineKeyboardButton(text=UnicodeButtons.support, callback_data="unicode_support")],
     ]

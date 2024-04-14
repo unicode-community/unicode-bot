@@ -36,15 +36,14 @@ async def community_chats(callback: types.CallbackQuery, db: Database, state: FS
 
     if subscriber_info["is_subscriber"]:
         await callback.message.answer(
-            text=chats_for_subscriber,
-            disable_web_page_preview=True,
-            reply_markup=create_new_chat_and_return_to_menu
+            text=chats_for_subscriber, disable_web_page_preview=True, reply_markup=create_new_chat_and_return_to_menu
         )
     else:
         idempotence_key = str(uuid.uuid4())
-        payment = Payment.create(create_subscription_params(price=499, user_id=callback.from_user.id),
-                                 idempotency_key=idempotence_key)
-
+        payment = Payment.create(
+            create_subscription_params(price=int(os.getenv("SUBSCRIPTION_PRICE")), user_id=callback.from_user.id),
+            idempotency_key=idempotence_key,
+        )
         await callback.message.answer(
             text=chats_for_unsubscriber,
             reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id),
@@ -54,19 +53,13 @@ async def community_chats(callback: types.CallbackQuery, db: Database, state: FS
 
 @router.callback_query(F.data == "create_new_chat")
 async def create_new_chat(callback: types.CallbackQuery) -> None:
-    await callback.message.answer(
-        text=rules_to_create_new_chat,
-        reply_markup=accept_create_new_chat_and_return_to_menu
-    )
+    await callback.message.answer(text=rules_to_create_new_chat, reply_markup=accept_create_new_chat_and_return_to_menu)
     await callback.answer()
 
 
 @router.callback_query(F.data == "accept_create_new_chat")
 async def accept_create_new_chat(callback: types.CallbackQuery, state: FSMContext) -> None:
-    await callback.message.answer(
-        text=ask_new_chat_name,
-        reply_markup=return_to_menu
-    )
+    await callback.message.answer(text=ask_new_chat_name, reply_markup=return_to_menu)
     await state.set_state(NewChat.name)
     await callback.answer()
 
@@ -77,9 +70,6 @@ async def finish_create_new_chat(message: types.Message, bot: Bot, state: FSMCon
         chat_id=os.getenv("FORWADING_CHAT"),
         text=f"@{message.from_user.username}, `{message.from_user.full_name}` предложил идею для нового чата:\n```\n{message.text}```",
     )
-    await message.answer(
-        text=feedback_after_create_new_chat,
-        reply_markup=return_to_menu
-    )
+    await message.answer(text=feedback_after_create_new_chat, reply_markup=return_to_menu)
 
     await state.clear()

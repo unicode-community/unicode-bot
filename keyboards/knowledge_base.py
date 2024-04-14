@@ -2,10 +2,10 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from config import AdditionalButtons, UnicodeButtons, UnicodeLinks
 
-redirect_knowdledge_base_and_update_base_and_return_to_menu = InlineKeyboardMarkup(
+redirect_knowledge_base_and_update_base_and_return_to_menu = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text=AdditionalButtons.redirect_to_knowledge_base, url=UnicodeLinks.knowdledge_base)],
-        [InlineKeyboardButton(text=AdditionalButtons.update_knowdledge_base, callback_data="update_knowledge_base")],
+        [InlineKeyboardButton(text=AdditionalButtons.redirect_to_knowledge_base, url=UnicodeLinks.knowledge_base)],
+        [InlineKeyboardButton(text=AdditionalButtons.update_knowledge_base, callback_data="update_knowledge_base")],
         [InlineKeyboardButton(text=UnicodeButtons.main_menu, callback_data="unicode_menu")],
     ]
 )

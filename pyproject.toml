@@ -1,0 +1,56 @@
+[tool.ruff]
+exclude = [
+    ".git",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "messages",
+]
+
+line-length = 120
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+    # https://docs.astral.sh/ruff/rules/
+    "I", # isort
+    "E", # pycodestyle
+    "F", # pyflakes
+    "W", # pycodestyle,
+    "N", # pep8-naming
+    "Q", # flake8-quotes
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+    "C90", # mccabe
+    "UP", # pyupgrade
+    "B", # flake8-bugbear
+    "A", # flake8-builtins
+    "C4", # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "ISC", # flake8-implicit-str-concat
+    "ICN", # flake8-import-conventions
+    "INP", # flake8-no-pep420
+    "PIE", # flake8-pie
+    "T20", # flake8-print
+    "RET", # flake8-return
+    "TID", # flake8-tidy-imports
+    "ERA", # eradicate
+    "PD", # pandas-vet
+    "PL", # Pylint
+    "FLY", # flynt
+    "NPY", # NumPy-specific rules
+    "PERF", # Perflint
+    "LOG", # flake8-logging
+]
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"

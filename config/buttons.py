@@ -2,7 +2,7 @@ class UnicodeButtons:
     subscribe = "🎉 Оформить подписку"
     chats = "💭 Чаты сообщества"
     networking_bot = "🤝 Бот для IT знакомств"
-    knowdledge_base = "📚 База знаний"
+    knowledge_base = "📚 База знаний"
     mentors_table = "🏅 Таблица менторов"
     support = "👨🏼‍💻 Написать в поддержку"
     main_menu = "🏠 В главное меню"
@@ -20,7 +20,7 @@ class AdditionalButtons:
     delete_mentor_form = "🗑 Удалить анкету"
     confirm_delete_form = "🗑 Да, удалить"
     free = "🆓 Бесплатно"
-    update_knowdledge_base = "➕ Пополнить базу"
+    update_knowledge_base = "➕ Пополнить базу"
 
 
 class SubscriptionsButtons:

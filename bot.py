@@ -38,7 +38,6 @@ async def main() -> None:
         # handlers.networking_bot.router,
         handlers.support.router,
         handlers.admin.router,
-        handlers.private_channel.router,
     )
     jobstores = {
         'default': SQLAlchemyJobStore(url='sqlite:///jobs.sqlite'),
