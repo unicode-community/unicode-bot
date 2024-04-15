@@ -6,6 +6,7 @@ from yookassa import Payment
 
 from config.config import Config
 from db.database import Database
+from filters import ChatTypeFilter
 from keyboards.networking_bot import redirect_to_bot_and_return_to_menu
 from keyboards.subscribe import create_kb_to_payment
 from messages.networking_bot import add_for_unsubscribers, welcome_networking_bot
@@ -13,6 +14,7 @@ from utils import get_subscription_status
 from utils.payments import create_subscription_params
 
 router = Router()
+router.message.filter(ChatTypeFilter(chat_type="private"))
 
 
 @router.callback_query(F.data == "unicode_networking")

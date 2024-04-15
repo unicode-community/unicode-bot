@@ -21,7 +21,8 @@ class User(Base):
     subscription_end: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     is_subscribed_to_payments: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     payment_method_id: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
+    send_warning_1d: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    send_warning_7d: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
 class Mentor(Base):
     __tablename__ = "mentors"

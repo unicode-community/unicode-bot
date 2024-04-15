@@ -3,10 +3,12 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
 from db import Database
+from filters import ChatTypeFilter
 from keyboards import main_menu_kb
 from messages import main_welcome
 
 router = Router()
+router.message.filter(ChatTypeFilter(chat_type="private"))
 
 
 @router.callback_query(F.data == "unicode_menu")

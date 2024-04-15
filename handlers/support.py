@@ -3,10 +3,12 @@ from aiogram.fsm.context import FSMContext
 
 import messages.support as msg
 from config import Config
+from filters import ChatTypeFilter
 from keyboards import return_to_menu
 from utils import Support
 
 router = Router()
+router.message.filter(ChatTypeFilter(chat_type="private"))
 
 
 @router.callback_query(F.data == "unicode_support")

@@ -9,10 +9,13 @@ import keyboards.subscribe as kb
 import messages.subscribe as msg
 from config import Config
 from db import Database
+from filters import ChatTypeFilter
 from keyboards import return_to_menu
 from utils import create_subscription_params, get_subscription_status
 
 router = Router()
+router.message.filter(ChatTypeFilter(chat_type="private"))
+
 
 Configuration.account_id = os.getenv("YOOKASSA_SHOP_ID")
 Configuration.secret_key = os.getenv("YOOKASSA_SECRET_KEY")

@@ -8,11 +8,13 @@ import keyboards.knowledge_base as kb
 import messages.knowledge_base as msg
 from config import Config
 from db import Database
+from filters import ChatTypeFilter
 from keyboards import create_kb_to_payment, return_to_menu
 from messages import not_text_message
 from utils import Interview, Material, Other, Question, create_subscription_params, get_subscription_status
 
 router = Router()
+router.message.filter(ChatTypeFilter(chat_type="private"))
 
 
 @router.callback_query(F.data == "unicode_knowledge_base")

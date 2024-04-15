@@ -8,10 +8,12 @@ import keyboards.community_chats as kb
 import messages.community_chats as msg
 from config import Config
 from db import Database
+from filters import ChatTypeFilter
 from keyboards import create_kb_to_payment, return_to_menu
 from utils import NewChat, create_subscription_params, get_subscription_status
 
 router = Router()
+router.message.filter(ChatTypeFilter(chat_type="private"))
 
 
 @router.callback_query(F.data == "unicode_chats")
@@ -60,10 +62,8 @@ async def finish_create_new_chat(message: types.Message, bot: Bot, state: FSMCon
     await bot.send_message(
         chat_id=cfg.forwarding_chat,
         text=msg.message_for_admins.format(
-            username=message.from_user.username,
-            full_name=message.from_user.full_name,
-            info=message.text
-        )
+            username=message.from_user.username, full_name=message.from_user.full_name, info=message.text
+        ),
     )
     await message.answer(text=msg.feedback_after_create_new_chat, reply_markup=return_to_menu)
 

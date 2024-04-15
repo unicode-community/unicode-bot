@@ -9,12 +9,13 @@ from pytz import timezone
 import keyboards.admin as kb
 import messages.admin as msg
 from db import Database
-from filters import IsAdmin
+from filters import ChatTypeFilter, IsAdmin
 from keyboards import return_to_menu
 from utils import Admin, get_subscription_status
 
 router = Router()
 router.message.filter(IsAdmin())
+router.message.filter(ChatTypeFilter(chat_type="private"))
 
 
 @router.message(Command("admin"))

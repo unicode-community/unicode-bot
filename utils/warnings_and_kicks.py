@@ -13,7 +13,10 @@ from utils.payments import create_subscription_params
 api = Api(os.getenv("AIRTABLE_TOKEN"))
 table = api.table(os.getenv("AIRTABLE_BASE_ID"), os.getenv("AIRTABLE_TABLE_ID"))
 
-async def send_warning_7d(bot: Bot, user_id, cfg: Config) -> None:
+async def send_warning_7d(bot: Bot, user_id, cfg: Config, db: Database) -> None:
+    user_info = await db.get_user(user_id=user_id)
+    if user_info.send_warning_7d:
+        return
     try:
         payment = Payment.create(
             create_subscription_params(
@@ -26,10 +29,14 @@ async def send_warning_7d(bot: Bot, user_id, cfg: Config) -> None:
             text="😰 Скоро срок твоей подписки истекает. Через *7 дней* ты потеряешь доступ ко всем сервисам сообщества Unicode.",
             reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id),
         )
+        await db.user_update(user_id=user_id, send_warning_7d=True)
     except:
         pass
 
-async def send_warning_1d(bot: Bot, user_id, cfg: Config) -> None:
+async def send_warning_1d(bot: Bot, user_id, cfg: Config, db: Database) -> None:
+    user_info = await db.get_user(user_id=user_id)
+    if user_info.send_warning_7d:
+        return
     try:
         payment = Payment.create(
             create_subscription_params(
@@ -42,6 +49,7 @@ async def send_warning_1d(bot: Bot, user_id, cfg: Config) -> None:
             text="😰 Завтра срок твоей подписки истекает. Через *24 часа* ты потеряешь доступ ко всем сервисам сообщества Unicode.",
             reply_markup=create_kb_to_payment(url=payment.confirmation.confirmation_url, payment_id=payment.id),
         )
+        await db.user_update(user_id=user_id, send_warning_1d=True)
     except:
         pass
 

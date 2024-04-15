@@ -10,11 +10,13 @@ import keyboards.mentors_table as kb
 import messages.mentors_table as msg
 from config import Config
 from db import Database
+from filters import ChatTypeFilter
 from keyboards import return_to_menu
 from messages import not_text_message
 from utils import Mentor, create_subscription_params, get_subscription_status
 
 router = Router()
+router.message.filter(ChatTypeFilter(chat_type="private"))
 
 api = Api(os.getenv("AIRTABLE_TOKEN"))
 table = api.table(os.getenv("AIRTABLE_BASE_ID"), os.getenv("AIRTABLE_TABLE_ID"))
